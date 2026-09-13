@@ -10,6 +10,12 @@ export type OrviaSession = {
 
 const encoder = new TextEncoder();
 
+function base64UrlEncode(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
 function base64UrlDecode(value: string): ArrayBuffer {
   const base64 = value.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((value.length + 3) % 4);
   const binary = atob(base64);
@@ -26,8 +32,16 @@ async function signingKey(): Promise<CryptoKey | null> {
     encoder.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['verify']
+    ['sign', 'verify']
   );
+}
+
+export async function signSession(session: OrviaSession): Promise<string | null> {
+  const key = await signingKey();
+  if (!key) return null;
+  const payload = base64UrlEncode(encoder.encode(JSON.stringify(session)));
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+  return `${payload}.${base64UrlEncode(new Uint8Array(signature))}`;
 }
 
 export async function verifySession(value: string | null | undefined): Promise<OrviaSession | null> {
@@ -52,4 +66,14 @@ export async function verifySession(value: string | null | undefined): Promise<O
   } catch {
     return null;
   }
+}
+
+export function sessionCookieOptions(maxAgeSeconds = 60 * 60 * 8) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: maxAgeSeconds,
+  };
 }
