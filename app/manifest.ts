@@ -3,9 +3,9 @@ import type { MetadataRoute } from 'next';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'ORVIA Command Centre',
+    name: 'ORVIA Oversight — Command',
     short_name: 'ORVIA Command',
-    description: 'Private ORVIA founder command, intelligence and evidence workspace.',
+    description: 'Private ORVIA Oversight founder command, intelligence and evidence workspace.',
     start_url: '/',
     scope: '/',
     display: 'standalone',
