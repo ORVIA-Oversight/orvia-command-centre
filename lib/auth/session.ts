@@ -6,6 +6,7 @@ export type OrviaSession = {
   name: string;
   role: 'founder' | 'operator';
   exp: number;
+  purpose?: 'workspace' | 'command_handoff' | 'command_session';
 };
 
 const encoder = new TextEncoder();
