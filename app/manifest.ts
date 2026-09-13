@@ -2,11 +2,11 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    id: '/',
+    id: '/orvia-command-v2',
     name: 'ORVIA Oversight — Command',
     short_name: 'ORVIA Command',
     description: 'Private ORVIA Oversight founder command, intelligence and evidence workspace.',
-    start_url: '/',
+    start_url: '/?app=orvia-command-v2',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
@@ -15,7 +15,7 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ['business', 'productivity'],
     icons: [
       {
-        src: '/orvia-oversight-logo.png',
+        src: '/orvia-oversight-logo.png?v=2',
         type: 'image/png',
         purpose: 'any'
       }
