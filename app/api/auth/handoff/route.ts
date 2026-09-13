@@ -10,12 +10,16 @@ export async function GET(req: Request) {
   const path = rawPath.startsWith('/') && !rawPath.startsWith('//') ? rawPath : '/';
 
   const handoff = await verifySession(token);
-  if (!handoff) {
-    return NextResponse.redirect(new URL('https://workspace.orvia.org.uk/login?error=Command%20handoff%20expired%20or%20invalid'));
+  if (!handoff || handoff.purpose !== 'command_handoff') {
+    const login = new URL('https://workspace.orvia.org.uk/login');
+    login.searchParams.set('returnTo', `/api/auth/command-return?path=${encodeURIComponent(path)}`);
+    login.searchParams.set('error', 'Command handoff expired or invalid');
+    return NextResponse.redirect(login);
   }
 
   const session = await signSession({
     ...handoff,
+    purpose: 'command_session',
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
   });
   if (!session) {
