@@ -15,23 +15,13 @@ function oneLine(value: unknown) {
 
 function toolResult(toolCallId: string, result?: string, error?: string) {
   return NextResponse.json({
-    results: [
-      error
-        ? { toolCallId, error: oneLine(error) }
-        : { toolCallId, result: oneLine(result ?? 'No result returned.') },
-    ],
+    results: [error ? { toolCallId, error: oneLine(error) } : { toolCallId, result: oneLine(result ?? 'No result returned.') }],
   });
 }
 
 function getToolCall(body: any): ToolCall | null {
   const message = body?.message ?? {};
-  return (
-    message?.toolCallList?.[0] ??
-    message?.toolWithToolCallList?.[0]?.toolCall ??
-    body?.toolCallList?.[0] ??
-    body?.toolCall ??
-    null
-  );
+  return message?.toolCallList?.[0] ?? message?.toolWithToolCallList?.[0]?.toolCall ?? body?.toolCallList?.[0] ?? body?.toolCall ?? null;
 }
 
 function getName(call: ToolCall) {
@@ -50,6 +40,16 @@ function asBool(value: unknown, fallback = false) {
   return typeof value === 'boolean' ? value : fallback;
 }
 
+function suppliedGatewaySecret(req: NextRequest) {
+  const customHeader = req.headers.get('x-orvia-iris-key')?.trim() ?? '';
+  if (customHeader) return customHeader;
+
+  const authorization = req.headers.get('authorization')?.trim() ?? '';
+  if (/^Bearer\s+/i.test(authorization)) return authorization.replace(/^Bearer\s+/i, '').trim();
+
+  return '';
+}
+
 export async function POST(req: NextRequest) {
   let body: any = {};
   try {
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   const toolCallId = call?.id ?? body?.message?.toolCallList?.[0]?.id ?? 'unknown';
 
   const expectedSecret = process.env.IRIS_VOICE_GATEWAY_SECRET;
-  const suppliedSecret = req.headers.get('x-orvia-iris-key') ?? '';
+  const suppliedSecret = suppliedGatewaySecret(req);
   if (!expectedSecret) {
     return toolResult(toolCallId, undefined, 'IRIS voice gateway is deployed but its server secret is not configured.');
   }
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       const pattern = `%${query.replace(/[%_,]/g, ' ')}%`;
       const [tasks, work, integrations] = await Promise.all([
         supabase.from('admin_tasks').select('id,title,status,priority,owner,due,source').ilike('title', pattern).limit(10),
-        supabase.from('admin_work_queue').select('id,title,detail,status,priority,assigned_to,source_system,source_reference').or(`title.ilike.${pattern},detail.ilike.${pattern}`).limit(10),
+        supabase.from('admin_work_queue').select('id,title,detail,status,priority,assigned_to,source,reference').or(`title.ilike.${pattern},detail.ilike.${pattern}`).limit(10),
         supabase.from('admin_integrations').select('code,name,category,status,updated_at').ilike('name', pattern).limit(10),
       ]);
       const hits = [
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       const pattern = `%${project.replace(/[%_,]/g, ' ')}%`;
       const [tasks, work] = await Promise.all([
         supabase.from('admin_tasks').select('id,title,status,priority,owner,due,approval_required,source').ilike('title', pattern).limit(20),
-        supabase.from('admin_work_queue').select('id,title,detail,status,priority,assigned_to,approval_required,created_at,source_system,source_reference').or(`title.ilike.${pattern},detail.ilike.${pattern}`).order('created_at', { ascending: false }).limit(20),
+        supabase.from('admin_work_queue').select('id,title,detail,status,priority,assigned_to,approval_required,created_at,source,reference').or(`title.ilike.${pattern},detail.ilike.${pattern}`).order('created_at', { ascending: false }).limit(20),
       ]);
       const rows = [...(tasks.data ?? []), ...(work.data ?? [])];
       if (!rows.length) return toolResult(toolCallId, `IRIS has no matching live Command records for ${project}. Treat the project status as unverified until another source is checked.`);
@@ -146,8 +146,8 @@ export async function POST(req: NextRequest) {
         priority,
         assigned_to: 'IRIS',
         approval_required: approvalRequired,
-        source_system: 'ARIA',
-        source_reference: `VAPI:${callId}`,
+        source: 'ARIA',
+        reference: `VAPI:${callId}`,
       }).select('id,title,status,priority,assigned_to,approval_required').single();
       if (insert.error || !insert.data) return toolResult(toolCallId, undefined, `IRIS could not create the work item: ${insert.error?.message ?? 'unknown database error'}`);
       return toolResult(toolCallId, `Instruction accepted by IRIS. Work ID ${insert.data.id}. Status ${insert.data.status}. Priority ${insert.data.priority}. Assigned to ${insert.data.assigned_to}. ${insert.data.approval_required ? 'Human approval is required before consequential completion.' : 'No explicit approval flag was requested.'}`);
