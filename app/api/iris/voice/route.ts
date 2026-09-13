@@ -9,6 +9,13 @@ type ToolCall = {
   function?: { name?: string; arguments?: Record<string, unknown> };
 };
 
+type GatewayAuthMode = 'x-orvia-iris-key' | 'bearer' | 'authorization-other' | 'none';
+
+type GatewayAuth = {
+  secret: string;
+  mode: GatewayAuthMode;
+};
+
 function oneLine(value: unknown) {
   return String(value ?? '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -40,14 +47,33 @@ function asBool(value: unknown, fallback = false) {
   return typeof value === 'boolean' ? value : fallback;
 }
 
-function suppliedGatewaySecret(req: NextRequest) {
+function suppliedGatewayAuth(req: NextRequest): GatewayAuth {
   const customHeader = req.headers.get('x-orvia-iris-key')?.trim() ?? '';
-  if (customHeader) return customHeader;
+  if (customHeader) return { secret: customHeader, mode: 'x-orvia-iris-key' };
 
   const authorization = req.headers.get('authorization')?.trim() ?? '';
-  if (/^Bearer\s+/i.test(authorization)) return authorization.replace(/^Bearer\s+/i, '').trim();
+  if (/^Bearer\s+/i.test(authorization)) {
+    return {
+      secret: authorization.replace(/^Bearer\s+/i, '').trim(),
+      mode: 'bearer',
+    };
+  }
+  if (authorization) return { secret: '', mode: 'authorization-other' };
 
-  return '';
+  return { secret: '', mode: 'none' };
+}
+
+function authFailureMessage(mode: GatewayAuthMode) {
+  if (mode === 'x-orvia-iris-key') {
+    return 'IRIS voice gateway authentication failed: x-orvia-iris-key was received, but its credential value did not match the Command production secret.';
+  }
+  if (mode === 'bearer') {
+    return 'IRIS voice gateway authentication failed: Bearer authentication was received, but its credential value did not match the Command production secret.';
+  }
+  if (mode === 'authorization-other') {
+    return 'IRIS voice gateway authentication failed: an Authorization header was received, but it was not a supported Bearer credential.';
+  }
+  return 'IRIS voice gateway authentication failed: no supported authentication header was received.';
 }
 
 export async function POST(req: NextRequest) {
@@ -62,12 +88,12 @@ export async function POST(req: NextRequest) {
   const toolCallId = call?.id ?? body?.message?.toolCallList?.[0]?.id ?? 'unknown';
 
   const expectedSecret = process.env.IRIS_VOICE_GATEWAY_SECRET;
-  const suppliedSecret = suppliedGatewaySecret(req);
+  const suppliedAuth = suppliedGatewayAuth(req);
   if (!expectedSecret) {
     return toolResult(toolCallId, undefined, 'IRIS voice gateway is deployed but its server secret is not configured.');
   }
-  if (suppliedSecret !== expectedSecret) {
-    return toolResult(toolCallId, undefined, 'IRIS voice gateway authentication failed.');
+  if (suppliedAuth.secret !== expectedSecret) {
+    return toolResult(toolCallId, undefined, authFailureMessage(suppliedAuth.mode));
   }
 
   if (!call) return toolResult(toolCallId, undefined, 'No Vapi tool call was found in the request.');
