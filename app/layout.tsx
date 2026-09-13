@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import './light-overrides.css';
 
 export const metadata: Metadata = {
-  title: 'ORVIA Command Centre',
-  description: 'Internal ORVIA founder command, evidence and intelligence workspace',
+  title: 'ORVIA Command',
+  description: 'ORVIA Oversight founder command, evidence and intelligence workspace',
   manifest: '/manifest.webmanifest',
-  applicationName: 'ORVIA Command Centre',
+  applicationName: 'ORVIA Oversight',
   appleWebApp: {
     capable: true,
     title: 'ORVIA Command',
