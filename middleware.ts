@@ -21,6 +21,12 @@ async function verifyCommandSession(token?: string) {
 }
 
 export async function middleware(req: NextRequest) {
+  // Vapi must be able to reach the IRIS gateway without an interactive Command session.
+  // The route performs its own authentication using IRIS_VOICE_GATEWAY_SECRET.
+  if (req.nextUrl.pathname === '/api/iris/voice') {
+    return NextResponse.next();
+  }
+
   const session = await verifyCommandSession(req.cookies.get(ORVIA_SESSION_COOKIE)?.value);
   if (session?.email) {
     const response = NextResponse.next();
