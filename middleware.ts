@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ORVIA_SESSION_COOKIE, verifySession } from '@/lib/auth/session';
 
-const WORKSPACE_LOGIN = 'https://workspace.orvia.org.uk/api/auth/login';
+const WORKSPACE_LOGIN = 'https://workspace.orvia.org.uk/login';
 
 export async function middleware(req: NextRequest) {
   const session = await verifySession(req.cookies.get(ORVIA_SESSION_COOKIE)?.value);
-  if (session) {
+  if (session?.purpose === 'command_session') {
     const response = NextResponse.next();
     response.headers.set('x-orvia-user', session.email);
     response.headers.set('x-orvia-role', session.role);
