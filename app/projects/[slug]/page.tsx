@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Github, Globe2, ListChecks, Route, ShieldCheck } from 'lucide-react';
 import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
-import { getProject, projects } from '@/lib/projects';
+import { getProject, projects } from '@/lib/project-registry';
 
 export function generateStaticParams(){return projects.map(project=>({slug:project.slug}));}
 
