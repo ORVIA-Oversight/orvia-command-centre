@@ -1,9 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Activity, BookOpen, Gauge, Home, Radar, Search, ShieldCheck } from 'lucide-react';
+import { Activity, BookOpen, FolderKanban, Gauge, Home, Radar, Search, ShieldCheck } from 'lucide-react';
 
 const nav = [
   { href: '/', label: 'Today', icon: Home },
+  { href: '/projects', label: 'Projects & Ventures', icon: FolderKanban },
   { href: '/intelligence', label: 'Intelligence', icon: Radar },
   { href: '/library', label: 'Controlled Library', icon: BookOpen },
   { href: '/systems', label: 'Systems & Telemetry', icon: Activity },
