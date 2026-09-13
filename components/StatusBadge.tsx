@@ -1,0 +1,1 @@
+export function StatusBadge({ status }: { status:string }){ const c=status.toLowerCase().includes('connect')?'teal':status.toLowerCase().includes('config')?'gold':'purple'; return <span className={`statusBadge status-${c}`}>{status}</span> }
