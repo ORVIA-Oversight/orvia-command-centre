@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ORVIA_SESSION_COOKIE, verifySession } from '@/lib/auth/session';
 
-const WORKSPACE_LOGIN = 'https://workspace.orvia.org.uk/api/auth/login?returnTo=%2Fapi%2Fauth%2Fcommand-return';
+const WORKSPACE_LOGIN = 'https://workspace.orvia.org.uk/api/auth/login';
 
 export async function middleware(req: NextRequest) {
   const session = await verifySession(req.cookies.get(ORVIA_SESSION_COOKIE)?.value);
@@ -28,8 +28,10 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  const requested = req.nextUrl.pathname + req.nextUrl.search;
+  const returnTo = `/api/auth/command-return?path=${encodeURIComponent(requested)}`;
   const target = new URL(WORKSPACE_LOGIN);
-  target.searchParams.set('commandReturn', req.nextUrl.pathname + req.nextUrl.search);
+  target.searchParams.set('returnTo', returnTo);
   return NextResponse.redirect(target);
 }
 
