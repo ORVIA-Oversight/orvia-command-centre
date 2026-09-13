@@ -1,14 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ORVIA_SESSION_COOKIE, verifySession } from '@/lib/auth/session';
 
+const ORVIA_SESSION_COOKIE = 'orvia_session';
 const WORKSPACE_LOGIN = 'https://workspace.orvia.org.uk/login';
+const WORKSPACE_VERIFY = 'https://workspace.orvia.org.uk/api/auth/command-verify';
+
+async function verifyCommandSession(token?: string) {
+  if (!token) return null;
+  try {
+    const response = await fetch(WORKSPACE_VERIFY, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    const data = await response.json() as { valid?: boolean; session?: { email?: string; role?: string } };
+    return data.valid ? data.session ?? null : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function middleware(req: NextRequest) {
-  const session = await verifySession(req.cookies.get(ORVIA_SESSION_COOKIE)?.value);
-  if (session?.purpose === 'command_session') {
+  const session = await verifyCommandSession(req.cookies.get(ORVIA_SESSION_COOKIE)?.value);
+  if (session?.email) {
     const response = NextResponse.next();
     response.headers.set('x-orvia-user', session.email);
-    response.headers.set('x-orvia-role', session.role);
+    if (session.role) response.headers.set('x-orvia-role', session.role);
     return response;
   }
 
