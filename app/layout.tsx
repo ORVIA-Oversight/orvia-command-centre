@@ -1,4 +1,29 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
-export const metadata: Metadata = { title: 'ORVIA Command Centre', description: 'Internal ORVIA founder command, evidence and intelligence workspace', robots: { index:false, follow:false, noarchive:true, nosnippet:true } };
-export default function RootLayout({ children }:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}
+
+export const metadata: Metadata = {
+  title: 'ORVIA Command Centre',
+  description: 'Internal ORVIA founder command, evidence and intelligence workspace',
+  manifest: '/manifest.webmanifest',
+  applicationName: 'ORVIA Command Centre',
+  appleWebApp: {
+    capable: true,
+    title: 'ORVIA Command',
+    statusBarStyle: 'default'
+  },
+  icons: {
+    icon: '/orvia-oversight-logo.png',
+    shortcut: '/orvia-oversight-logo.png',
+    apple: '/orvia-oversight-logo.png'
+  },
+  robots: { index:false, follow:false, noarchive:true, nosnippet:true }
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0B2450',
+  colorScheme: 'light'
+};
+
+export default function RootLayout({ children }:{children:React.ReactNode}){
+  return <html lang="en"><body>{children}</body></html>
+}
