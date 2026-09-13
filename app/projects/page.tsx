@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ExternalLink, FolderKanban, Globe2 } from 'lucide-react';
 import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
-import { projectGroups, projects } from '@/lib/projects';
+import { projectGroups, projects } from '@/lib/project-registry';
 
 export default function ProjectsPage(){
  return <Shell><Topbar title="Projects & Ventures"/><div className="pageWrap">
