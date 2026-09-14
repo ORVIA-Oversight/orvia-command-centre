@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ArrowRight, CheckCircle2, Database, ExternalLink, FileCheck2, PhoneCall, Send, TriangleAlert } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Database, FileCheck2, PhoneCall, Send, TriangleAlert } from 'lucide-react';
 import { integrations } from '@/lib/data';
 import { MethodRail } from './MethodRail';
 import { MetricCard } from './MetricCard';
@@ -9,7 +9,7 @@ import { StatusBadge } from './StatusBadge';
 type Campaign={id:string;name:string;status:string;target_sector?:string;daily_call_cap?:number;timezone?:string;calling_window?:any;prompt_version?:string;objective?:string;metrics?:{leads:number;eligible:number;attempts:number;answered:number;bookings:number;handoffs:number;lastActivity?:string|null}};
 type DashboardState={source?:string;openTasks?:number;approvals?:number;integrations?:Array<{name:string;status:string}>;warning?:string;outbound?:{source?:string;primaryNumber?:{display_number?:string;e164_number?:string;provider?:string;purpose?:string;status?:string}|null;campaigns?:Campaign[];recentCalls?:any[]}};
 type SiteState={ok?:boolean;homepage?:{ok:boolean;status:number;ms:number};sitemap?:{ok:boolean;status:number;ms:number};stats?:{ok:boolean;status:number;ms:number};checkedAt?:string};
-type IrisState={status?:string;answer?:string;reason?:string;model?:string};
+type IrisState={status?:string;answer?:string;reason?:string;model?:string;workId?:string};
 
 export function DashboardHome(){
  const [command,setCommand]=useState('Run my launch-critical review from current verified evidence only.');
@@ -26,16 +26,14 @@ export function DashboardHome(){
  async function sendToIris(){
   setSending(true); setIris(null);
   try{
-   const r=await fetch('https://workspace.orvia.org.uk/api/ask',{
+   const r=await fetch('/api/iris/ask',{
     method:'POST',
-    credentials:'include',
     headers:{'content-type':'application/json'},
     body:JSON.stringify({question:command,context:{pathname:'/command',role:'founder',lens:'Command Centre'}})
    });
    const data=await r.json().catch(()=>({status:'INCOMPLETE',reason:`IRIS returned HTTP ${r.status}`}));
-   if(r.status===401) data.reason='IRIS is live but your Workspace session is not active. Open Workspace, sign in, then return here and send again.';
    setIris(data);
-  }catch{setIris({status:'INCOMPLETE',reason:'IRIS could not be reached from Command. The connection remains unverified.'});}
+  }catch{setIris({status:'INCOMPLETE',reason:'IRIS could not be reached from Command.'});}
   finally{setSending(false);}
  }
 
@@ -52,9 +50,9 @@ export function DashboardHome(){
  return <div className="pageWrap">
   <section className="commandHero">
    <div className="commandHeroTop"><div><div className="eyebrow">COMMAND ORVIA</div><h2>Ask once. Route the work. Record the evidence.</h2><p>IRIS coordinates the instruction across the Workspace. VERA preserves the evidence trail. Consequential decisions remain with the human owner.</p></div><MethodRail/></div>
-   <div className="commandComposer"><input value={command} onChange={e=>setCommand(e.target.value)} aria-label="Command"/><button onClick={sendToIris} disabled={sending}><Send size={16}/> {sending?'Sending…':'Send to IRIS'}</button></div>
+   <div className="commandComposer"><input value={command} onChange={e=>setCommand(e.target.value)} aria-label="Command"/><button onClick={sendToIris} disabled={sending||!command.trim()}><Send size={16}/> {sending?'Sending…':'Send to IRIS'}</button></div>
    {iris?.status==='COMPLETE' && <div className="commandNotice"><CheckCircle2 size={16}/><div><b>IRIS · {iris.model||'live response'}</b><div>{iris.answer}</div></div></div>}
-   {iris && iris.status!=='COMPLETE' && <div className="commandNotice"><TriangleAlert size={16}/><div><b>IRIS connection not accepted</b><div>{iris.reason||'No verified response was returned.'} <a href="https://workspace.orvia.org.uk" target="_blank" rel="noreferrer">Open Workspace <ExternalLink size={12}/></a></div></div></div>}
+   {iris && iris.status!=='COMPLETE' && <div className="commandNotice"><TriangleAlert size={16}/><div><b>IRIS route failed</b><div>{iris.reason||'No verified response was returned.'}</div></div></div>}
   </section>
 
   <section className="metricsGrid"><MetricCard label="OPEN WORK" value={openTasks} detail={dashboard?.source==='live'?'Live Hive / admin_tasks':'Awaiting live Supabase configuration'} tone="gold"/><MetricCard label="HUMAN APPROVALS" value={approvals} detail={dashboard?.source==='live'?'Live approval-required tasks':'Awaiting live Supabase configuration'} tone="purple"/><MetricCard label="PUBLIC SITE" value={siteLabel} detail={site?.ok?'orvia.org.uk health check passed':'Live health check unavailable'} tone="teal"/><MetricCard label="OUTBOUND READY" value={activeCampaign?String(activeCampaign.status).toUpperCase():'—'} detail={primaryNumber?.display_number?`${primaryNumber.display_number} · ${activeCampaign?.name||'No campaign selected'}`:'Awaiting Voice/Hive data'} tone="orange"/></section>
@@ -86,7 +84,7 @@ export function DashboardHome(){
 
   <section className="twoCol">
    <article className="panel"><div className="panelHead"><div><span>VISIBILITY · CURRENT CONNECTION PICTURE</span><h3>Connected systems</h3></div><ArrowRight size={18}/></div><div className="panelBody systemsGrid">{integrations.map(x=><div className="systemRow" key={x.name}><div><b>{x.name}</b><small>{x.note}</small></div><StatusBadge status={x.state}/></div>)}</div></article>
-   <article className="panel"><div className="panelHead"><div><span>ACCOUNTABILITY · LIVE ESTATE</span><h3>Current evidence</h3></div><Database size={18}/></div><div className="panelBody activityList"><div><FileCheck2/><p><b>Hive / Supabase</b><small>{dashboard?.source==='live'?'LIVE VERIFIED by /api/dashboard':dashboard?.warning||'Not yet verified from this deployment'}</small></p></div><div><FileCheck2/><p><b>Public ORVIA site</b><small>{site?.ok?`LIVE VERIFIED · homepage ${site.homepage?.status} · sitemap ${site.sitemap?.status}`:'Not verified'}</small></p></div><div><FileCheck2/><p><b>IRIS / Workspace</b><small>{iris?.status==='COMPLETE'?'LIVE VERIFIED by authenticated response':'Connection built; send a command after signing into Workspace to verify'}</small></p></div><div><FileCheck2/><p><b>Outbound Voice</b><small>{dashboard?.outbound?.source==='live'?`LIVE · ${campaigns.length} campaigns · ${primaryNumber?.display_number||'number unverified'}`:'Not verified'}</small></p></div></div></article>
+   <article className="panel"><div className="panelHead"><div><span>ACCOUNTABILITY · LIVE ESTATE</span><h3>Current evidence</h3></div><Database size={18}/></div><div className="panelBody activityList"><div><FileCheck2/><p><b>Hive / Supabase</b><small>{dashboard?.source==='live'?'LIVE VERIFIED by /api/dashboard':dashboard?.warning||'Not yet verified from this deployment'}</small></p></div><div><FileCheck2/><p><b>Public ORVIA site</b><small>{site?.ok?`LIVE VERIFIED · homepage ${site.homepage?.status} · sitemap ${site.sitemap?.status}`:'Not verified'}</small></p></div><div><FileCheck2/><p><b>IRIS / Command</b><small>{iris?.status==='COMPLETE'?'LIVE VERIFIED by same-origin Command route':'Send a command to verify'}</small></p></div><div><FileCheck2/><p><b>Outbound Voice</b><small>{dashboard?.outbound?.source==='live'?`LIVE · ${campaigns.length} campaigns · ${primaryNumber?.display_number||'number unverified'}`:'Not verified'}</small></p></div></div></article>
   </section>
  </div>
 }
