@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './light-overrides.css';
+import './production.css';
 
 export const metadata: Metadata = {
   title: 'ORVIA Command',
