@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ArrowRight, CheckCircle2, Database, FileCheck2, PhoneCall, Send, TriangleAlert } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Database, FileCheck2, PhoneCall, Send, TriangleAlert, Volume2, VolumeX } from 'lucide-react';
 import { integrations } from '@/lib/data';
 import { MethodRail } from './MethodRail';
 import { MetricCard } from './MetricCard';
@@ -15,6 +15,7 @@ export function DashboardHome(){
  const [command,setCommand]=useState('Run my launch-critical review from current verified evidence only.');
  const [iris,setIris]=useState<IrisState|null>(null);
  const [sending,setSending]=useState(false);
+ const [voiceOn,setVoiceOn]=useState(true);
  const [dashboard,setDashboard]=useState<DashboardState|null>(null);
  const [site,setSite]=useState<SiteState|null>(null);
 
@@ -22,6 +23,18 @@ export function DashboardHome(){
   fetch('/api/dashboard',{cache:'no-store'}).then(r=>r.json()).then(setDashboard).catch(()=>setDashboard({source:'unavailable'}));
   fetch('/api/site',{cache:'no-store'}).then(r=>r.json()).then(setSite).catch(()=>setSite({ok:false}));
  },[]);
+
+ function speak(text:string){
+  if(!voiceOn || typeof window==='undefined' || !('speechSynthesis' in window) || !text) return;
+  window.speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.rate=1;
+  utterance.pitch=1;
+  const voices=window.speechSynthesis.getVoices();
+  const preferred=voices.find(v=>/en-GB/i.test(v.lang) && /female|susan|sonia|libby|hazel|aria/i.test(v.name)) || voices.find(v=>/en-GB/i.test(v.lang)) || voices[0];
+  if(preferred) utterance.voice=preferred;
+  window.speechSynthesis.speak(utterance);
+ }
 
  async function sendToIris(){
   setSending(true); setIris(null);
@@ -33,6 +46,7 @@ export function DashboardHome(){
    });
    const data=await r.json().catch(()=>({status:'INCOMPLETE',reason:`IRIS returned HTTP ${r.status}`}));
    setIris(data);
+   if(data?.status==='COMPLETE' && data?.answer) speak(data.answer);
   }catch{setIris({status:'INCOMPLETE',reason:'IRIS could not be reached from Command.'});}
   finally{setSending(false);}
  }
@@ -50,7 +64,7 @@ export function DashboardHome(){
  return <div className="pageWrap">
   <section className="commandHero">
    <div className="commandHeroTop"><div><div className="eyebrow">COMMAND ORVIA</div><h2>Ask once. Route the work. Record the evidence.</h2><p>IRIS coordinates the instruction across the Workspace. VERA preserves the evidence trail. Consequential decisions remain with the human owner.</p></div><MethodRail/></div>
-   <div className="commandComposer"><input value={command} onChange={e=>setCommand(e.target.value)} aria-label="Command"/><button onClick={sendToIris} disabled={sending||!command.trim()}><Send size={16}/> {sending?'Sending…':'Send to IRIS'}</button></div>
+   <div className="commandComposer"><input value={command} onChange={e=>setCommand(e.target.value)} aria-label="Command"/><button type="button" onClick={()=>{setVoiceOn(v=>!v); if(voiceOn && typeof window!=='undefined') window.speechSynthesis?.cancel();}} title={voiceOn?'Voice reply on':'Voice reply off'}>{voiceOn?<Volume2 size={16}/>:<VolumeX size={16}/>} {voiceOn?'Voice on':'Voice off'}</button><button onClick={sendToIris} disabled={sending||!command.trim()}><Send size={16}/> {sending?'Sending…':'Send to IRIS'}</button></div>
    {iris?.status==='COMPLETE' && <div className="commandNotice"><CheckCircle2 size={16}/><div><b>IRIS · {iris.model||'live response'}</b><div>{iris.answer}</div></div></div>}
    {iris && iris.status!=='COMPLETE' && <div className="commandNotice"><TriangleAlert size={16}/><div><b>IRIS route failed</b><div>{iris.reason||'No verified response was returned.'}</div></div></div>}
   </section>
