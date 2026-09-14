@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       work_type: 'command_instruction',
       title: question.slice(0, 180),
       detail: clean(body?.context?.lens ? `${question} | Context: ${body.context.lens}` : question),
-      status: 'queued',
+      status: 'open',
       priority: /\b(urgent|critical|immediately|today|launch)\b/i.test(question) ? 'high' : 'normal',
       assigned_to: 'IRIS',
       approval_required: approvalRequired,
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       const [tasks, approvals, work, integrations] = await Promise.all([
         supabase.from('admin_tasks').select('id,title,status,priority,owner,due_at,approval_required').neq('status', 'completed').order('due_at', { ascending: true, nullsFirst: false }).limit(12),
         supabase.from('admin_tasks').select('id', { count: 'exact', head: true }).neq('status', 'completed').eq('approval_required', true),
-        supabase.from('admin_work_queue').select('id,title,status,priority,assigned_to,approval_required,created_at').neq('status', 'completed').order('created_at', { ascending: false }).limit(12),
+        supabase.from('admin_work_queue').select('id,title,status,priority,assigned_to,approval_required,created_at').not('status', 'in', '(done,cancelled)').order('created_at', { ascending: false }).limit(12),
         supabase.from('admin_integrations').select('name,status,updated_at').order('updated_at', { ascending: false }).limit(20),
       ]);
 
