@@ -1,18 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { ArrowRight, CheckCircle2, Database, FileCheck2, PhoneCall, Send, TriangleAlert, Volume2, VolumeX } from 'lucide-react';
-import { integrations } from '@/lib/data';
-import { MethodRail } from './MethodRail';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, Clock3, PoundSterling, Send, ShieldCheck, Target, TriangleAlert, Volume2, VolumeX } from 'lucide-react';
 import { MetricCard } from './MetricCard';
-import { StatusBadge } from './StatusBadge';
 
-type Campaign={id:string;name:string;status:string;target_sector?:string;daily_call_cap?:number;timezone?:string;calling_window?:any;prompt_version?:string;objective?:string;metrics?:{leads:number;eligible:number;attempts:number;answered:number;bookings:number;handoffs:number;lastActivity?:string|null}};
-type DashboardState={source?:string;openTasks?:number;approvals?:number;integrations?:Array<{name:string;status:string}>;warning?:string;outbound?:{source?:string;primaryNumber?:{display_number?:string;e164_number?:string;provider?:string;purpose?:string;status?:string}|null;campaigns?:Campaign[];recentCalls?:any[]}};
-type SiteState={ok?:boolean;homepage?:{ok:boolean;status:number;ms:number};sitemap?:{ok:boolean;status:number;ms:number};stats?:{ok:boolean;status:number;ms:number};checkedAt?:string};
-type IrisState={status?:string;answer?:string;reason?:string;model?:string;workId?:string};
+type Campaign={id:string;name:string;status:string;target_sector?:string;metrics?:{leads:number;eligible:number;attempts:number;answered:number;bookings:number;handoffs:number}};
+type DashboardState={source?:string;openTasks?:number;approvals?:number;warning?:string;outbound?:{source?:string;primaryNumber?:{display_number?:string}|null;campaigns?:Campaign[]}};
+type SiteState={ok?:boolean};
+type IrisState={status?:string;answer?:string;reason?:string};
 
 export function DashboardHome(){
- const [command,setCommand]=useState('Run my launch-critical review from current verified evidence only.');
+ const [command,setCommand]=useState('What actually needs my attention today?');
  const [iris,setIris]=useState<IrisState|null>(null);
  const [sending,setSending]=useState(false);
  const [voiceOn,setVoiceOn]=useState(true);
@@ -44,61 +41,71 @@ export function DashboardHome(){
     headers:{'content-type':'application/json'},
     body:JSON.stringify({question:command,context:{pathname:'/command',role:'founder',lens:'Command Centre'}})
    });
-   const data=await r.json().catch(()=>({status:'INCOMPLETE',reason:`IRIS returned HTTP ${r.status}`}));
+   const data=await r.json().catch(()=>({status:'INCOMPLETE',reason:'IRIS could not complete that request.'}));
    setIris(data);
    if(data?.status==='COMPLETE' && data?.answer) speak(data.answer);
-  }catch{setIris({status:'INCOMPLETE',reason:'IRIS could not be reached from Command.'});}
+  }catch{setIris({status:'INCOMPLETE',reason:'IRIS is unavailable right now. I need to verify the connection before answering reliably.'});}
   finally{setSending(false);}
  }
 
- const openTasks=dashboard?.source==='live'?dashboard.openTasks??0:'—';
- const approvals=dashboard?.source==='live'?dashboard.approvals??0:'—';
- const siteLabel=site?.ok?'LIVE':'—';
  const campaigns=dashboard?.outbound?.campaigns??[];
  const activeCampaign=campaigns.find(c=>['ready','active','running'].includes(String(c.status||'').toLowerCase())) || campaigns[0];
- const primaryNumber=dashboard?.outbound?.primaryNumber;
  const totalEligible=campaigns.reduce((sum,c)=>sum+(c.metrics?.eligible??0),0);
  const totalAttempts=campaigns.reduce((sum,c)=>sum+(c.metrics?.attempts??0),0);
  const totalBookings=campaigns.reduce((sum,c)=>sum+(c.metrics?.bookings??0),0);
+ const openTasks=dashboard?.source==='live'?dashboard.openTasks??0:'—';
+ const approvals=dashboard?.source==='live'?dashboard.approvals??0:'—';
+ const everythingOnTrack=dashboard?.source==='live' && (dashboard.approvals??0)===0;
+
+ const attentionText=useMemo(()=>{
+  if(dashboard?.source!=='live') return 'I still need a verified live work feed before I can give you a reliable daily picture.';
+  const approvalCount=dashboard.approvals??0;
+  if(approvalCount>0) return `${approvalCount} item${approvalCount===1?' needs':'s need'} your decision. Routine work can stay in the background.`;
+  return 'Nothing currently needs your approval. Keep the routine work moving in the background.';
+ },[dashboard]);
 
  return <div className="pageWrap">
   <section className="commandHero">
-   <div className="commandHeroTop"><div><div className="eyebrow">COMMAND ORVIA</div><h2>Ask once. Route the work. Record the evidence.</h2><p>IRIS coordinates the instruction across the Workspace. VERA preserves the evidence trail. Consequential decisions remain with the human owner.</p></div><MethodRail/></div>
-   <div className="commandComposer"><input value={command} onChange={e=>setCommand(e.target.value)} aria-label="Command"/><button type="button" onClick={()=>{setVoiceOn(v=>!v); if(voiceOn && typeof window!=='undefined') window.speechSynthesis?.cancel();}} title={voiceOn?'Voice reply on':'Voice reply off'}>{voiceOn?<Volume2 size={16}/>:<VolumeX size={16}/>} {voiceOn?'Voice on':'Voice off'}</button><button onClick={sendToIris} disabled={sending||!command.trim()}><Send size={16}/> {sending?'Sending…':'Send to IRIS'}</button></div>
-   {iris?.status==='COMPLETE' && <div className="commandNotice"><CheckCircle2 size={16}/><div><b>IRIS · {iris.model||'live response'}</b><div>{iris.answer}</div></div></div>}
-   {iris && iris.status!=='COMPLETE' && <div className="commandNotice"><TriangleAlert size={16}/><div><b>IRIS route failed</b><div>{iris.reason||'No verified response was returned.'}</div></div></div>}
-  </section>
+   <div className="eyebrow">ORVIA COMMAND</div>
+   <h2>Good evening John. Here is what matters.</h2>
+   <p>{attentionText}</p>
 
-  <section className="metricsGrid"><MetricCard label="OPEN WORK" value={openTasks} detail={dashboard?.source==='live'?'Live Hive / admin_tasks':'Awaiting live Supabase configuration'} tone="gold"/><MetricCard label="HUMAN APPROVALS" value={approvals} detail={dashboard?.source==='live'?'Live approval-required tasks':'Awaiting live Supabase configuration'} tone="purple"/><MetricCard label="PUBLIC SITE" value={siteLabel} detail={site?.ok?'orvia.org.uk health check passed':'Live health check unavailable'} tone="teal"/><MetricCard label="OUTBOUND READY" value={activeCampaign?String(activeCampaign.status).toUpperCase():'—'} detail={primaryNumber?.display_number?`${primaryNumber.display_number} · ${activeCampaign?.name||'No campaign selected'}`:'Awaiting Voice/Hive data'} tone="orange"/></section>
-
-  <section className="panel spaced">
-   <div className="panelHead"><div><span>REVENUE · OUTBOUND CAMPAIGN CONTROL</span><h3>Morning campaign operating picture</h3></div><PhoneCall size={18}/></div>
-   <div className="panelBody">
-    {dashboard?.outbound?.source==='live' ? <>
-      <div className="campaignSummary">
-       <div><small>PRIMARY OUTBOUND LINE</small><strong>{primaryNumber?.display_number||'—'}</strong><span>{primaryNumber?.provider||''}</span></div>
-       <div><small>ELIGIBLE LEADS</small><strong>{totalEligible}</strong><span>Hive / voice_outbound_leads</span></div>
-       <div><small>ATTEMPTS RECORDED</small><strong>{totalAttempts}</strong><span>Live outbound attempts</span></div>
-       <div><small>BOOKINGS</small><strong>{totalBookings}</strong><span>Campaign-attributed bookings</span></div>
-      </div>
-      <div className="campaignTable">
-       {campaigns.slice(0,6).map(c=><div className="campaignRow" key={c.id}>
-        <div className="campaignMain"><b>{c.name}</b><small>{c.target_sector||'Sector not recorded'}</small></div>
-        <span className={`campaignState state-${String(c.status||'unknown').toLowerCase()}`}>{String(c.status||'unknown').toUpperCase()}</span>
-        <div><small>Leads</small><b>{c.metrics?.leads??0}</b></div>
-        <div><small>Eligible</small><b>{c.metrics?.eligible??0}</b></div>
-        <div><small>Attempts</small><b>{c.metrics?.attempts??0}</b></div>
-        <div><small>Bookings</small><b>{c.metrics?.bookings??0}</b></div>
-       </div>)}
-      </div>
-      {activeCampaign&&<div className="campaignNote"><b>{activeCampaign.name}</b><span>{activeCampaign.objective||'Objective not recorded.'}</span><small>Prompt {activeCampaign.prompt_version||'—'} · Daily cap {activeCampaign.daily_call_cap??'—'} · {activeCampaign.timezone||'—'}</small></div>}
-     </> : <div className="commandNotice"><TriangleAlert size={16}/><div><b>Outbound data unavailable</b><div>Command has not received a live Voice/Hive feed from this deployment yet.</div></div></div>}
+   <div className="commandComposer">
+    <input value={command} onChange={e=>setCommand(e.target.value)} aria-label="Ask IRIS" placeholder="Ask IRIS anything about ORVIA…" />
+    <button type="button" onClick={()=>{setVoiceOn(v=>!v); if(voiceOn && typeof window!=='undefined') window.speechSynthesis?.cancel();}} title={voiceOn?'Voice reply on':'Voice reply off'}>{voiceOn?<Volume2 size={16}/>:<VolumeX size={16}/>} {voiceOn?'Voice on':'Voice off'}</button>
+    <button onClick={sendToIris} disabled={sending||!command.trim()}><Send size={16}/> {sending?'Working…':'Ask IRIS'}</button>
    </div>
+
+   {iris?.status==='COMPLETE' && <div className="commandNotice"><CheckCircle2 size={16}/><div><b>IRIS</b><div>{iris.answer}</div></div></div>}
+   {iris && iris.status!=='COMPLETE' && <div className="commandNotice"><TriangleAlert size={16}/><div><b>IRIS needs to verify something first</b><div>{iris.reason||'I do not have enough verified information to answer that reliably.'}</div></div></div>}
   </section>
 
-  <section className="twoCol">
-   <article className="panel"><div className="panelHead"><div><span>VISIBILITY · CURRENT CONNECTION PICTURE</span><h3>Connected systems</h3></div><ArrowRight size={18}/></div><div className="panelBody systemsGrid">{integrations.map(x=><div className="systemRow" key={x.name}><div><b>{x.name}</b><small>{x.note}</small></div><StatusBadge status={x.state}/></div>)}</div></article>
-   <article className="panel"><div className="panelHead"><div><span>ACCOUNTABILITY · LIVE ESTATE</span><h3>Current evidence</h3></div><Database size={18}/></div><div className="panelBody activityList"><div><FileCheck2/><p><b>Hive / Supabase</b><small>{dashboard?.source==='live'?'LIVE VERIFIED by /api/dashboard':dashboard?.warning||'Not yet verified from this deployment'}</small></p></div><div><FileCheck2/><p><b>Public ORVIA site</b><small>{site?.ok?`LIVE VERIFIED · homepage ${site.homepage?.status} · sitemap ${site.sitemap?.status}`:'Not verified'}</small></p></div><div><FileCheck2/><p><b>IRIS / Command</b><small>{iris?.status==='COMPLETE'?'LIVE VERIFIED by same-origin Command route':'Send a command to verify'}</small></p></div><div><FileCheck2/><p><b>Outbound Voice</b><small>{dashboard?.outbound?.source==='live'?`LIVE · ${campaigns.length} campaigns · ${primaryNumber?.display_number||'number unverified'}`:'Not verified'}</small></p></div></div></article>
+  <section className="metricsGrid">
+   <MetricCard label="NEEDS YOU" value={approvals} detail={dashboard?.source==='live'?'Decisions or approvals waiting for you':'Awaiting verified live work state'} tone="purple"/>
+   <MetricCard label="OPEN WORK" value={openTasks} detail={dashboard?.source==='live'?'Active work across ORVIA':'Awaiting verified live work state'} tone="gold"/>
+   <MetricCard label="SALES" value={totalEligible||'—'} detail={totalEligible?'Eligible prospects in current outbound campaigns':'No verified eligible prospect count yet'} tone="teal"/>
+   <MetricCard label="LIVE SERVICES" value={site?.ok?'ON':'—'} detail={site?.ok?'Public ORVIA service responding':'Service health not yet verified'} tone="orange"/>
+  </section>
+
+  <section className="twoCol spaced">
+   <article className="panel">
+    <div className="panelHead"><div><span>TODAY</span><h3>What needs attention</h3></div><Clock3 size={18}/></div>
+    <div className="panelBody activityList">
+     <div><ShieldCheck/><p><b>{everythingOnTrack?'Nothing needs you right now':`${approvals} decision${approvals===1?'':'s'} waiting`}</b><small>{everythingOnTrack?'Routine work can continue without interruption.':'Open the approvals view when you are ready to decide.'}</small></p></div>
+     <div><Target/><p><b>{activeCampaign?activeCampaign.name:'Sales campaign not yet verified'}</b><small>{activeCampaign?`${String(activeCampaign.status||'unknown').toUpperCase()} · ${totalEligible} eligible · ${totalAttempts} attempts · ${totalBookings} bookings`:'IRIS will show sales only when the live campaign feed is available.'}</small></p></div>
+     <div><PoundSterling/><p><b>Money view</b><small>Keep financial truth read-only from Stripe until the finance connection is verified in Command.</small></p></div>
+    </div>
+   </article>
+
+   <article className="panel">
+    <div className="panelHead"><div><span>HOW COMMAND WORKS</span><h3>One conversation. Everything else behind it.</h3></div><ShieldCheck size={18}/></div>
+    <div className="panelBody activityList">
+     <div><CheckCircle2/><p><b>IRIS coordinates</b><small>You ask once. IRIS routes the work to the right division.</small></p></div>
+     <div><CheckCircle2/><p><b>VERA verifies</b><small>Facts are checked before they are presented as confirmed.</small></p></div>
+     <div><CheckCircle2/><p><b>CRUCIBLE challenges</b><small>Consequential work is independently challenged before release.</small></p></div>
+     <div><CheckCircle2/><p><b>You decide</b><small>Money, contracts, publication, safeguarding and other consequential actions stay with you.</small></p></div>
+    </div>
+   </article>
   </section>
  </div>
 }
