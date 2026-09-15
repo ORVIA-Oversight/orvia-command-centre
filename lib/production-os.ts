@@ -20,37 +20,104 @@ export type ToolRecord = {
   note: string;
 };
 
+// John sees IRIS. These division leads sit behind IRIS and are routed automatically.
+// Specialist capabilities are skills/tools inside a division, not separate personalities.
 export const productionAgents: AgentRecord[] = [
-  { id:'iris', name:'IRIS', role:'ORVIA Conductor', purpose:'Understands requests, builds work orders, routes specialist work and enforces hand-offs.', inputs:['Human intent','Project context','Verified sources'], outputs:['WORK_ORDER','AGENT_PLAN','SYNTHESIS_REPORT'], tools:['Approved knowledge','Project registry'], permissions:['READ_CANONICAL','WRITE_PROJECT'], approval:'Cannot publish or change canonical truth.', version:'1.0', status:'ACTIVE' },
-  { id:'vera', name:'VERA', role:'Canonical Truth & Evidence', purpose:'Protects factual truth, claims, prices, features and evidence states.', inputs:['Claims','Approved sources'], outputs:['FACT_PACK','CLAIM_CHECK','RISK_FLAGS'], tools:['SharePoint','Controlled library'], permissions:['READ_PRIVATE_SOURCE','WRITE_CLAIM_PROPOSAL'], approval:'May block unsupported public claims.', version:'1.0', status:'ACTIVE' },
-  { id:'brand', name:'Brand Guardian', role:'ORVIA Brand Agent', purpose:'Supplies and protects canonical visual and verbal brand rules.', inputs:['Brand request','Product identity'], outputs:['BRAND_PACK','BRAND_CHECK','PROPOSED_CHANGE'], tools:['Brand library','Asset library'], permissions:['READ_BRAND','WRITE_BRAND_PROPOSAL'], approval:'Cannot make proposed branding canonical.', version:'1.0', status:'ACTIVE' },
-  { id:'creative', name:'Creative Director', role:'Concept & Campaign', purpose:'Turns rough ideas into strong human-centred creative concepts.', inputs:['Human idea','FACT_PACK','BRAND_PACK'], outputs:['CREATIVE_BRIEF','CONCEPT_OPTIONS'], tools:['Proven library'], permissions:['WRITE_DRAFT'], approval:'Creative concepts remain drafts until accepted.', version:'1.0', status:'ACTIVE' },
-  { id:'script', name:'Scriptwriter', role:'Spoken Content', purpose:'Writes scripts for real speech, pacing, scenes and calls to action.', inputs:['CREATIVE_BRIEF','FACT_PACK'], outputs:['SCRIPT_V1','SCENE_PLAN'], tools:['Prompt library'], permissions:['WRITE_DRAFT'], approval:'Cannot alter verified claims.', version:'1.0', status:'ACTIVE' },
-  { id:'podcast', name:'Podcast Producer', role:'Podcast Production', purpose:'Builds solo, interview, panel and avatar podcast episodes.', inputs:['CREATIVE_BRIEF','FACT_PACK'], outputs:['EPISODE_BRIEF','RUNNING_ORDER','SHOW_NOTES'], tools:['Approved audio/video tools'], permissions:['WRITE_DRAFT'], approval:'Production pack requires editorial review.', version:'1.0', status:'ACTIVE' },
-  { id:'blog', name:'Blog & Editorial', role:'Editorial Content', purpose:'Turns approved ideas into blogs, articles, newsletters and thought leadership.', inputs:['Master idea','FACT_PACK'], outputs:['MASTER_ARTICLE','TITLE_OPTIONS'], tools:['Prompt library'], permissions:['WRITE_DRAFT'], approval:'No unsupported claims or generic filler.', version:'1.0', status:'ACTIVE' },
-  { id:'social', name:'Social Producer', role:'Platform Content', purpose:'Creates channel-native social derivatives from approved master content.', inputs:['Approved master content'], outputs:['PLATFORM_PACK'], tools:['Social tools when verified'], permissions:['WRITE_DRAFT'], approval:'Cannot publish without release approval.', version:'1.0', status:'ACTIVE' },
-  { id:'video', name:'Video Producer', role:'Video Production', purpose:'Converts approved scripts into scenes, shots, B-roll, graphics and edit instructions.', inputs:['Approved script','BRAND_PACK'], outputs:['VIDEO_PRODUCTION_PLAN'], tools:['HeyGen','Synthesia','Gemini'], permissions:['WRITE_DRAFT'], approval:'Does not assume tool capabilities.', version:'1.0', status:'ACTIVE' },
-  { id:'heygen', name:'HeyGen Specialist', role:'HeyGen Production', purpose:'Creates HeyGen-ready scene, avatar, voice and export instructions.', inputs:['VIDEO_PRODUCTION_PLAN'], outputs:['HEYGEN_PRODUCTION_PACK'], tools:['HeyGen'], permissions:['CALL_GENERATIVE_TOOL'], approval:'Only available actions verified in Tool Network.', version:'1.0', status:'ACTIVE' },
-  { id:'synthesia', name:'Synthesia Specialist', role:'Synthesia Production', purpose:'Creates presenter-led training and explainer production packs.', inputs:['VIDEO_PRODUCTION_PLAN'], outputs:['SYNTHESIA_PRODUCTION_PACK'], tools:['Synthesia'], permissions:['CALL_GENERATIVE_TOOL'], approval:'Only verified capabilities may be used.', version:'1.0', status:'ACTIVE' },
-  { id:'gemini', name:'Gemini Visual Producer', role:'Generative Visuals', purpose:'Creates cinematic B-roll and visual prompts without fake product UI.', inputs:['Scene brief','BRAND_PACK'], outputs:['GEMINI_VISUAL_PACK'], tools:['Gemini video'], permissions:['CALL_GENERATIVE_TOOL'], approval:'Critical UI/text must be composited elsewhere.', version:'1.0', status:'ACTIVE' },
-  { id:'design', name:'Design Agent', role:'Design Production', purpose:'Creates design packs for Canva, social artwork, thumbnails and campaign graphics.', inputs:['BRAND_PACK','Creative direction'], outputs:['DESIGN_PACK'], tools:['Canva'], permissions:['WRITE_DRAFT'], approval:'Must consume canonical brand context.', version:'1.0', status:'ACTIVE' },
-  { id:'web', name:'Web Producer', role:'Website Production', purpose:'Builds page structure, beginning/middle/end story, UX and conversion logic.', inputs:['FACT_PACK','BRAND_PACK','Creative brief'], outputs:['SITE_MAP','WEB_BUILD_PACK'], tools:['GitHub','Vercel when authorised'], permissions:['WRITE_DRAFT','CREATE_PREVIEW'], approval:'Cannot deploy without approval.', version:'1.0', status:'ACTIVE' },
-  { id:'prompt', name:'Prompt Engineer', role:'Tool Prompting', purpose:'Translates approved ORVIA work into precise tool-specific production prompts.', inputs:['Approved content','Tool profile'], outputs:['TOOL_PROMPT_PACK'], tools:['Prompt library'], permissions:['WRITE_DRAFT'], approval:'Cannot invent tool capability.', version:'1.0', status:'ACTIVE' },
-  { id:'editor', name:'ORVIA Editor', role:'Senior Editor', purpose:'Integrates, tightens and humanises specialist outputs while respecting locked sections.', inputs:['Agent outputs','Locked sections'], outputs:['EDITOR_VERSION','EDITOR_NOTES'], tools:['Project versions'], permissions:['WRITE_DRAFT'], approval:'Cannot approve release.', version:'1.0', status:'ACTIVE' },
-  { id:'redteam', name:'Red Team', role:'Independent Challenge', purpose:'Tries to break claims, story, brand, UX, technical assumptions and reputation risk.', inputs:['Edited package','Evidence'], outputs:['RED_TEAM_REPORT'], tools:['Read-only project evidence'], permissions:['READ_CANONICAL'], approval:'Returns PASS, PASS WITH CHANGES or FAIL.', version:'1.0', status:'ACTIVE' },
-  { id:'release', name:'Release Controller', role:'Final Governance Gate', purpose:'Checks evidence, brand, editing, red team, accessibility, technical and human approval.', inputs:['Approval records','Final package'], outputs:['RELEASE_RECORD'], tools:['Approval registry'], permissions:['WRITE_PROJECT'], approval:'Can mark APPROVED FOR RELEASE but never publish autonomously.', version:'1.0', status:'ACTIVE' },
-  { id:'performance', name:'Performance Analyst', role:'Post-release Intelligence', purpose:'Measures outcomes and proposes evidence-backed learning candidates.', inputs:['Analytics','Release record'], outputs:['PERFORMANCE_REPORT','LEARNING_CANDIDATE'], tools:['Verified analytics'], permissions:['READ_CANONICAL','WRITE_DRAFT'], approval:'Cannot make a method canonical automatically.', version:'1.0', status:'ACTIVE' },
+  {
+    id:'iris', name:'IRIS', role:'Chief of Staff & Single Interface',
+    purpose:'Understands John in plain language, routes work to the right division, combines the answer and brings back only decisions, risks and next actions.',
+    inputs:['Human request','Current company context','Verified live sources'],
+    outputs:['EXECUTIVE_REPLY','WORK_ROUTE','DECISION_REQUEST'],
+    tools:['ORCHESTRA routing','Hive work state','Approved connected systems'],
+    permissions:['READ_CANONICAL','WRITE_WORK','ROUTE_DIVISIONS'],
+    approval:'May coordinate and prepare work. Consequential actions remain human-approved.',
+    version:'2.0', status:'ACTIVE'
+  },
+  {
+    id:'stratos', name:'STRATOS', role:'Strategy Division',
+    purpose:'Handles strategy, portfolio choices, scenarios, priorities and what ORVIA should start, stop, continue or defer.',
+    inputs:['Objectives','Market evidence','Portfolio state','Commercial constraints'],
+    outputs:['STRATEGY_BRIEF','OPTIONS','PRIORITY_RECOMMENDATION'],
+    tools:['Research','Portfolio evidence','Financial context'],
+    permissions:['READ_CANONICAL','WRITE_DRAFT'],
+    approval:'Advises only. Strategic commitments require John.',
+    version:'2.0', status:'ACTIVE'
+  },
+  {
+    id:'ops', name:'OPS', role:'Operations Division',
+    purpose:'Runs the operational picture: work, readiness, blockers, delivery, incidents, dependencies and launch checks.',
+    inputs:['Hive work state','Projects','Deadlines','Operational evidence'],
+    outputs:['OPERATING_PICTURE','READINESS_REVIEW','BLOCKER_LIST','ACTION_PLAN'],
+    tools:['Hive / Supabase','monday projection','Command data'],
+    permissions:['READ_CANONICAL','WRITE_WORK'],
+    approval:'Can organise and progress routine work; cannot make consequential allocations or releases without approval.',
+    version:'2.0', status:'ACTIVE'
+  },
+  {
+    id:'vera', name:'VERA', role:'Intelligence & Evidence Division',
+    purpose:'Determines what is supported, what is uncertain, what conflicts and what evidence is missing. Research and monitoring feed VERA rather than becoming separate visible agents.',
+    inputs:['Claims','Documents','Live systems','Research results'],
+    outputs:['FACT_PACK','SOURCE_MAP','CONTRADICTIONS','EVIDENCE_GAPS'],
+    tools:['SharePoint','Controlled Library','Approved research sources','System evidence'],
+    permissions:['READ_PRIVATE_SOURCE','WRITE_CLAIM_PROPOSAL'],
+    approval:'May block unsupported factual claims. Does not decide policy or commercial action.',
+    version:'2.0', status:'ACTIVE'
+  },
+  {
+    id:'atlas', name:'ATLAS', role:'Back Office Division',
+    purpose:'Combines administration, finance visibility, people, compliance and controlled-document production into one internal service desk.',
+    inputs:['Mail','Calendar','Finance records','Policies','Controlled documents'],
+    outputs:['ADMIN_BRIEF','FINANCE_BRIEF','CONTROLLED_DRAFT','COMPLIANCE_ACTIONS'],
+    tools:['Microsoft 365','SharePoint','Stripe read data','Hive'],
+    permissions:['READ_CANONICAL','WRITE_DRAFT','WRITE_WORK'],
+    approval:'Cannot spend, sign, approve a controlled report or make employment decisions.',
+    version:'2.0', status:'ACTIVE'
+  },
+  {
+    id:'commercial', name:'COMMERCIAL', role:'Deals, Sales & Marketing Division',
+    purpose:'Owns the revenue journey from prospecting through pipeline, proposals, partnerships, campaigns, negotiation and sale.',
+    inputs:['Prospects','Pipeline','Campaigns','Pricing','Capacity','Market evidence'],
+    outputs:['REVENUE_BRIEF','NEXT_BEST_ACTIONS','PROPOSAL_DRAFT','CAMPAIGN_PLAN','FORECAST'],
+    tools:['Hive CRM objects','Voice / ARIA data','Stripe','Research','Approved campaign tools'],
+    permissions:['READ_CANONICAL','WRITE_DRAFT','WRITE_WORK'],
+    approval:'Cannot send consequential outreach, agree terms, spend budget or sign contracts without authority.',
+    version:'2.0', status:'ACTIVE'
+  },
+  {
+    id:'social', name:'SOCIAL', role:'Social & Brand Division',
+    purpose:'Owns content calendar, brand-safe content, media production, community monitoring and performance learning.',
+    inputs:['Approved proposition','Brand rules','Campaign brief','Performance data'],
+    outputs:['CONTENT_PLAN','SOCIAL_PACK','MEDIA_BRIEF','PERFORMANCE_SUMMARY'],
+    tools:['Canva','HeyGen','Metricool','Approved media tools'],
+    permissions:['READ_BRAND','WRITE_DRAFT'],
+    approval:'Cannot publish sensitive or consequential material without the required release approval.',
+    version:'2.0', status:'ACTIVE'
+  },
+  {
+    id:'crucible', name:'CRUCIBLE', role:'Independent Challenge',
+    purpose:'Sits outside the production chain and challenges consequential work for evidence, assumptions, risk, compliance and unintended consequences.',
+    inputs:['Proposed consequential output','VERA evidence pack','Decision context'],
+    outputs:['PASS','QUALIFIED','REVIEW','FAIL'],
+    tools:['Read-only project evidence','Independent model where configured'],
+    permissions:['READ_CANONICAL'],
+    approval:'FAIL or REVIEW stops consequential release until a human resolves the issue.',
+    version:'2.0', status:'ACTIVE'
+  },
 ];
 
 export const toolNetwork: ToolRecord[] = [
-  { name:'SharePoint / Microsoft 365', purpose:'Canonical internal knowledge and evidence', status:'CONNECTED', agents:['IRIS','VERA','Brand Guardian'], note:'Connection exists; individual source provenance is still required.' },
-  { name:'GitHub', purpose:'Source control and build evidence', status:'CONNECTED', agents:['Web Producer','IRIS'], note:'Command Centre repository is connected and writable.' },
-  { name:'Vercel', purpose:'Preview and production deployment', status:'NOT VERIFIED', agents:['Web Producer','Release Controller'], note:'Do not represent this Command Centre deployment as connected until project scope is verified in the active Vercel account.' },
-  { name:'Supabase', purpose:'Project, audit and operational data', status:'CONFIGURED', agents:['IRIS','VERA','Release Controller'], note:'Command Centre already contains Supabase support; production schema expansion requires review.' },
-  { name:'HeyGen', purpose:'Avatar and presenter production', status:'NOT VERIFIED', agents:['HeyGen Specialist','Video Producer'], note:'Production connection must be technically verified before execution.' },
-  { name:'Synthesia', purpose:'Presenter-led explainers and training', status:'NOT VERIFIED', agents:['Synthesia Specialist','Video Producer'], note:'Production connection must be technically verified before execution.' },
-  { name:'Gemini video', purpose:'Generative cinematic B-roll', status:'NOT VERIFIED', agents:['Gemini Visual Producer'], note:'Treat as a production tool only after authenticated integration is verified.' },
-  { name:'Canva', purpose:'Design and campaign artwork', status:'CONNECTED', agents:['Design Agent','Brand Guardian'], note:'Use only approved brand assets and templates.' },
+  { name:'Supabase / Hive', purpose:'Canonical operational truth: work, owners, approvals, audit and structured company state', status:'CONFIGURED', agents:['IRIS','OPS','VERA','ATLAS','COMMERCIAL'], note:'Treat Hive as the master work state. Do not create a second competing task truth.' },
+  { name:'SharePoint / Microsoft 365', purpose:'Canonical document and evidence truth', status:'CONNECTED', agents:['IRIS','VERA','ATLAS'], note:'Approved documents remain in SharePoint; Command should reference them rather than duplicate them.' },
+  { name:'GitHub', purpose:'Technical source truth', status:'CONNECTED', agents:['IRIS','OPS','VERA'], note:'Use repository evidence for code and change state.' },
+  { name:'Vercel', purpose:'Live deployment truth', status:'NOT VERIFIED', agents:['IRIS','OPS','VERA'], note:'Only show LIVE when the active project/deployment is actually verified.' },
+  { name:'monday.com', purpose:'Optional operational/project view', status:'CONNECTED', agents:['OPS'], note:'Use as a projection or collaboration surface; Hive remains master.' },
+  { name:'Stripe', purpose:'Financial and payment truth', status:'NOT VERIFIED', agents:['ATLAS','COMMERCIAL'], note:'Prefer read-only financial visibility first; payment actions remain approval-gated.' },
+  { name:'Outlook / Calendar', purpose:'Communication, meetings and commitments', status:'CONFIGURED', agents:['IRIS','ATLAS','COMMERCIAL'], note:'Summarise and action relevant commitments; do not duplicate whole mailboxes into Hive.' },
+  { name:'ORVIA Voice / ARIA', purpose:'Calls, campaigns, outcomes and customer communication evidence', status:'CONFIGURED', agents:['IRIS','OPS','COMMERCIAL'], note:'Expose outcomes and exceptions by default, not raw call data.' },
+  { name:'Canva', purpose:'Approved design production', status:'CONNECTED', agents:['SOCIAL'], note:'Use approved ORVIA assets and templates.' },
+  { name:'HeyGen', purpose:'Video/avatar production', status:'NOT VERIFIED', agents:['SOCIAL'], note:'Use only after authenticated production access is verified.' },
+  { name:'Metricool', purpose:'Social publishing and performance', status:'NOT VERIFIED', agents:['SOCIAL'], note:'Connect when ready; publishing should respect approval rules.' },
 ];
 
-export const coreWorkflow = ['INTENT','ORCHESTRATE','EVIDENCE','CREATE','EDIT','CHALLENGE','APPROVE','PRODUCE','VERIFY','RELEASE','MEASURE','LEARN'];
+// Keep the operating loop short. The technical detail sits underneath each step.
+export const coreWorkflow = ['ASK','UNDERSTAND','ROUTE','DO','VERIFY','CHALLENGE','APPROVE','ACT'];
