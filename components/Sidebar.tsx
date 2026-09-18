@@ -1,10 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Activity, BookOpen, Bot, FolderKanban, Gauge, Home, Radar, Search, ShieldCheck, Share2 } from 'lucide-react';
+import { Activity, BookOpen, Bot, FolderKanban, Gauge, Home, RadioTower, Radar, Search, ShieldCheck, Share2 } from 'lucide-react';
 
 const nav = [
   { href: '/', label: 'Today', icon: Home },
   { href: '/production', label: 'Production OS', icon: Bot },
+  { href: '/deploy', label: 'Deploy & Search', icon: RadioTower },
   { href: '/social', label: 'Social Command', icon: Share2 },
   { href: '/projects', label: 'Projects & Ventures', icon: FolderKanban },
   { href: '/intelligence', label: 'Intelligence', icon: Radar },
