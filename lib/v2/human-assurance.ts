@@ -1,5 +1,5 @@
 import type { BoardObservationCategory, UUID } from './types';
-import { V2InvariantError } from './action-machine';
+import { V2InvariantError } from './errors';
 
 export interface BoardObservation {
   id: UUID;

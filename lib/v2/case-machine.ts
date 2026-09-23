@@ -1,5 +1,5 @@
 import type { CaseLifecycle, SeriousConcernClosureContext } from './types';
-import { V2InvariantError } from './action-machine';
+import { V2InvariantError } from './errors';
 
 const ALLOWED: Record<CaseLifecycle, CaseLifecycle[]> = {
   OPEN: ['HELD', 'CLOSING_REVIEW'],

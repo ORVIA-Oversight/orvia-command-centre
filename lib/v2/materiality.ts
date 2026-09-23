@@ -1,5 +1,5 @@
 import type { HumanGateStatus, JapanRecord, MaterialityTier } from './types';
-import { V2InvariantError } from './action-machine';
+import { V2InvariantError } from './errors';
 
 const FULL_JAPAN_TIERS: MaterialityTier[] = ['TIER_2_CONSEQUENTIAL', 'TIER_3_HIGH_CONSEQUENCE'];
 

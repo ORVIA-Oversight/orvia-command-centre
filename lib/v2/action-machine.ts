@@ -1,5 +1,6 @@
 import type { ActionLifecycle, TransitionContext } from './types';
 import { assertJapanForExecution } from './materiality';
+import { V2InvariantError } from './errors';
 
 const ALLOWED: Record<ActionLifecycle, ActionLifecycle[]> = {
   PROPOSED: ['ASSIGNED'],
@@ -11,12 +12,7 @@ const ALLOWED: Record<ActionLifecycle, ActionLifecycle[]> = {
   CLOSED: [],
 };
 
-export class V2InvariantError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'V2InvariantError';
-  }
-}
+export { V2InvariantError } from './errors';
 
 export function assertTransition(
   from: ActionLifecycle,
@@ -31,8 +27,8 @@ export function assertTransition(
     throw new V2InvariantError(`Invalid action transition: ${from} -> ${to}`);
   }
 
-  // Assignment is allowed before a material action has been authorised so that
-  // the accountable human can receive and assess the proposal. Execution is gated.
+  // Assignment can happen before substantive approval so that an accountable
+  // human can receive and assess the proposed work. Starting material work is gated.
   if (from === 'ASSIGNED' && to === 'IN_PROGRESS') {
     const materiality = context.materiality ?? 'TIER_1_ROUTINE';
     assertJapanForExecution(materiality, context.japan, context.humanGateStatus);
