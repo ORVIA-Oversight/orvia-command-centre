@@ -1,4 +1,5 @@
 import type { ActionLifecycle, TransitionContext } from './types';
+import { assertJapanForExecution } from './materiality';
 
 const ALLOWED: Record<ActionLifecycle, ActionLifecycle[]> = {
   PROPOSED: ['ASSIGNED'],
@@ -30,18 +31,11 @@ export function assertTransition(
     throw new V2InvariantError(`Invalid action transition: ${from} -> ${to}`);
   }
 
-  if (from === 'PROPOSED' && to === 'ASSIGNED') {
-    if (!context.japan) throw new V2InvariantError('JAPAN is required before assignment, except the separately recorded urgent path.');
-    const j = context.japan;
-    if (!j.justified.trim() || !j.proportionate.trim() || !j.necessary.trim()) {
-      throw new V2InvariantError('JAPAN justification, proportionality and necessity must be recorded.');
-    }
-    if (!j.actionable.ownerId || !j.actionable.deadline || !j.actionable.expectedOutcome || !j.actionable.reviewPoint || !j.actionable.escalationRoute) {
-      throw new V2InvariantError('JAPAN actionable fields are incomplete.');
-    }
-    if (j.urgentPath && !j.retrospectiveDueAt) {
-      throw new V2InvariantError('Urgent JAPAN requires a retrospective completion deadline.');
-    }
+  // Assignment is allowed before a material action has been authorised so that
+  // the accountable human can receive and assess the proposal. Execution is gated.
+  if (from === 'ASSIGNED' && to === 'IN_PROGRESS') {
+    const materiality = context.materiality ?? 'TIER_1_ROUTINE';
+    assertJapanForExecution(materiality, context.japan, context.humanGateStatus);
   }
 
   if (from === 'COMPLETION_CLAIMED' && to === 'VERIFIED') {
