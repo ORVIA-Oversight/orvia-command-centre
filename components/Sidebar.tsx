@@ -29,7 +29,7 @@ export function Sidebar() {
         <div className="methodLetters">
           <b className="mO">O</b><b className="mR">R</b><b className="mV">V</b><b className="mI">I</b><b className="mA">A</b>
         </div>
-        <p>IRIS coordinates. VERA protects the truth. The human decides.</p>
+        <p>IRIS coordinates. VERA verifies against evidence. Humans own the judgement.</p>
       </div>
     </aside>
   );

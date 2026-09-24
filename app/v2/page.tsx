@@ -6,6 +6,7 @@ const modules = [
   ['IRIS', 'Deterministic orchestration', 'State, ownership, timers, acknowledgement, escalation and gates.'],
   ['HIVE', 'Evidence + provenance', 'Originals, versions, assertions, contradictions, dissent and gaps.'],
   ['VITA', 'Assurance', 'Tests completeness, control and whether the evidence supports the process.'],
+  ['CHALLENGE', 'Independent alternative review', 'Blind first-pass challenge, alternative explanations, discriminating evidence and unresolved uncertainty.'],
   ['HUMAN', 'Decision', 'Authorised people interpret, challenge, decide and own responsibility.'],
   ['VERA', 'Verification', 'Separates claimed completion from verified completion.'],
   ['RECHECK', 'Effectiveness + learning', 'Establish whether the action actually worked and remains effective.'],
@@ -19,6 +20,7 @@ const rules = [
   'Verification is not effectiveness.',
   'Precaution is not a factual finding.',
   'Serious Concern keeps Protection and Inquiry separate.',
+  'High-consequence review requires an independent challenge before closure.',
   'The full workflow must function with AI switched off.',
 ];
 
@@ -65,12 +67,20 @@ export default function V2FoundationPage() {
             </div>
           </div>
           <div className="panel">
-            <div className="panelHead"><div><span>SERIOUS CONCERN</span><h3>Parallel tracks</h3></div></div>
+            <div className="panelHead"><div><span>INDEPENDENT CHALLENGE</span><h3>Red-team without truth voting</h3></div></div>
             <div className="panelBody">
-              <div className="systemRow"><div><b>PROTECTION</b><small>What must happen now. Never gated by ORVIA or inquiry completion.</small></div><span className="statusBadge status-gold">PARALLEL</span></div>
-              <div className="systemRow spaced"><div><b>INQUIRY</b><small>What can actually be established. Evidence, alternatives, contradictions, gaps and Known Then / Known Now.</small></div><span className="statusBadge status-purple">PARALLEL</span></div>
-              <p className="mutedText spaced">Precautionary controls remain labelled as precautions unless and until an authorised human decision is supported by evidence.</p>
+              <div className="systemRow"><div><b>BLIND FIRST PASS</b><small>Challenge model/reviewer receives the review question and bounded evidence before seeing the primary interpretation.</small></div><span className="statusBadge status-gold">CHALLENGE</span></div>
+              <div className="systemRow spaced"><div><b>COMPARE AFTERWARDS</b><small>Alternative interpretations, discriminating evidence, missing evidence and uncertainty are preserved side by side.</small></div><span className="statusBadge status-purple">PRESERVE</span></div>
+              <p className="mutedText spaced">Disagreement is not averaged into consensus. AI cannot decide which account is true; an authorised human considers the challenge and records what remains unresolved.</p>
             </div>
+          </div>
+        </section>
+
+        <section className="panel spaced">
+          <div className="panelHead"><div><span>SERIOUS CONCERN</span><h3>Parallel tracks</h3></div></div>
+          <div className="panelBody systemsGrid">
+            <div className="systemRow"><div><b>PROTECTION</b><small>What must happen now. Never gated by ORVIA or inquiry completion.</small></div><span className="statusBadge status-gold">PARALLEL</span></div>
+            <div className="systemRow"><div><b>INQUIRY</b><small>What can actually be established. Evidence, alternatives, contradictions, gaps and Known Then / Known Now.</small></div><span className="statusBadge status-purple">PARALLEL</span></div>
           </div>
         </section>
 
