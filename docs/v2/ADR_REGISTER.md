@@ -24,3 +24,4 @@ Status: accepted baseline for implementation review
 | ADR-018 | Human Assurance Board recommendations remain advisory until authorised human consideration. |
 | ADR-019 | Independent observability/reconciliation must not depend solely on IRIS self-reporting. |
 | ADR-020 | Public product claims map to explicit controls and acceptance evidence. |
+| ADR-021 | Independent Challenge is a governed red-team function inside IRIS/VITA, not a second decision engine. Its initial high-consequence pass is blind to the primary interpretation, disagreement is preserved, and an authorised human considers the result. |

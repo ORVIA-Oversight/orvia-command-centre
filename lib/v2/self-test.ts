@@ -2,6 +2,7 @@ import { assertTransition } from './action-machine';
 import { assertSeriousConcernTracks } from './serious-concern';
 import { assertSeriousConcernClosure } from './case-machine';
 import { configCanPublish } from './config-compiler';
+import { assertChallengeHumanConsidered, assertIndependentFirstPass } from './challenge';
 import type { TransitionContext } from './types';
 
 type TestResult = { name: string; passed: boolean; detail: string };
@@ -44,6 +45,40 @@ export function runV2SelfTests() {
         inquiryTrackResolved: true,
         challengeApproverIds: ['one'],
         unresolvedMaterialItems: 0,
+      }))),
+    run('Independent Challenge first pass must be blind to primary analysis', () =>
+      expectThrow(() => assertIndependentFirstPass({
+        id: 'challenge-1',
+        caseId: 'case-1',
+        materiality: 'TIER_3_HIGH_CONSEQUENCE',
+        mode: 'BLIND_INDEPENDENT',
+        question: 'What alternative explanations fit the evidence?',
+        blindToPrimaryAtFirstPass: false,
+        evidenceManifest: ['evidence-1'],
+        alternativeViews: [{ statement: 'Alternative', evidenceRefs: ['evidence-1'], contradictoryEvidenceRefs: [], limitations: 'Test' }],
+        discriminatingEvidence: [],
+        missingEvidence: [],
+        unresolvedUncertainty: [],
+        challengerType: 'AI',
+        challengerId: 'provider:model',
+        status: 'INDEPENDENT_COMPLETE',
+      }))),
+    run('High-consequence challenge cannot satisfy closure without human consideration', () =>
+      expectThrow(() => assertChallengeHumanConsidered({
+        id: 'challenge-2',
+        caseId: 'case-1',
+        materiality: 'TIER_3_HIGH_CONSEQUENCE',
+        mode: 'BLIND_INDEPENDENT',
+        question: 'What alternative explanations fit the evidence?',
+        blindToPrimaryAtFirstPass: true,
+        evidenceManifest: ['evidence-1'],
+        alternativeViews: [{ statement: 'Alternative', evidenceRefs: ['evidence-1'], contradictoryEvidenceRefs: [], limitations: 'Test' }],
+        discriminatingEvidence: [],
+        missingEvidence: [],
+        unresolvedUncertainty: ['Cause remains uncertain'],
+        challengerType: 'AI',
+        challengerId: 'provider:model',
+        status: 'INDEPENDENT_COMPLETE',
       }))),
     run('Configuration compiler rejects ownerless workflow', () => {
       const outcome = configCanPublish({

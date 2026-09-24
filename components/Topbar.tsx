@@ -5,7 +5,7 @@ export function Topbar({ title, eyebrow = 'ORVIA OVERSIGHT LTD · FOUNDER WORKSP
       <div className="topbarInner">
         <div><small>{eyebrow}</small><h1>{title}</h1></div>
         <div className="topMethod">
-          <span className="mO">O <em>Observation</em></span><span className="mR">R <em>Reflection</em></span><span className="mV">V <em>Visibility</em></span><span className="mI">I <em>Insight</em></span><span className="mA">A <em>Accountability</em></span>
+          <span className="mO">O <em>Observe</em></span><span className="mR">R <em>Review</em></span><span className="mV">V <em>Verify</em></span><span className="mI">I <em>Interpret</em></span><span className="mA">A <em>Act</em></span>
         </div>
         <div className="privatePill">INTERNAL · HUMAN CONTROLLED</div>
       </div>
