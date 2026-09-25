@@ -3,10 +3,10 @@ name: Command V3 Verify
 on:
   push:
     branches:
-      - command-v3-live-20260925
+      - 'command-v3-*'
   pull_request:
     branches:
-      - landscape-refit-20260925
+      - main
 
 permissions:
   contents: read
