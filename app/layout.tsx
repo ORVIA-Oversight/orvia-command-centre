@@ -14,9 +14,9 @@ export const metadata: Metadata = {
     statusBarStyle: 'default'
   },
   icons: {
-    icon: '/orvia-oversight-logo.png',
-    shortcut: '/orvia-oversight-logo.png',
-    apple: '/orvia-oversight-logo.png'
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg'
   },
   robots: { index:false, follow:false, noarchive:true, nosnippet:true }
 };
