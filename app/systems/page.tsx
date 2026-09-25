@@ -17,7 +17,7 @@ async function loadSystems(){
 }
 
 function good(status:string){
- return ['connected','configured','ready','live verified','verified','verified_by_ui'].includes(String(status||'').toLowerCase().replaceAll('_',' '));
+ return ['connected','configured','ready','live verified','verified','verified by ui'].includes(String(status||'').toLowerCase().replaceAll('_',' '));
 }
 function badge(status:string){return good(status)?'status-teal':'status-gold';}
 
