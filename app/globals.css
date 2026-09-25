@@ -47,3 +47,6 @@
 .workActions button{border:0;border-radius:8px;background:var(--gold);color:var(--navy);font-size:7px;font-weight:900;padding:6px 8px;cursor:pointer}
 .workActions button.secondary{background:rgba(255,255,255,.055);color:#cbd3d9;border:1px solid rgba(255,255,255,.08)}
 .workActions button:disabled{opacity:.5;cursor:default}
+
+.evidenceLinks{display:grid;grid-template-columns:1fr 1fr;gap:12px}.evidenceLinks a{display:flex;align-items:center;gap:11px;text-decoration:none;border:1px solid var(--line);border-radius:14px;padding:14px 15px;background:linear-gradient(180deg,#35404a,#2f3841);box-shadow:var(--shadow)}.evidenceLinks a>span{flex:1}.evidenceLinks b{display:block;font-size:11px}.evidenceLinks small{display:block;margin-top:3px;font-size:8px;color:#9faab3}.evidenceLinks svg:first-child{color:#8ed0d5}
+@media(max-width:820px){.evidenceLinks{grid-template-columns:1fr}}
