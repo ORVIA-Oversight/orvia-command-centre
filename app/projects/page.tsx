@@ -4,6 +4,9 @@ import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
 import { loadOrviaAssets, isCurrentAsset, isLegacyAsset } from '@/lib/asset-registry';
 
+export const dynamic='force-dynamic';
+export const revalidate=0;
+
 function accentClass(key:string|null){
  return key==='r'?'visual-teal':key==='v'?'visual-gold':key==='i'?'visual-purple':key==='a'?'visual-orange':'visual-navy';
 }
