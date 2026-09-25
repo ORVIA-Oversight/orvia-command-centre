@@ -27,8 +27,38 @@ export async function PATCH(req:NextRequest){
   if(action==='complete') patch={...patch,status:'completed',approval_required:false};
   if(action==='reopen') patch={...patch,status:'open'};
 
-  const {data,error}=await supabase.from(table).update(patch).eq('id',id).select('id,status,approval_required').maybeSingle();
+  const {data,error}=await supabase.from(table).update(patch).eq('id',id).select('id,title,status,approval_required').maybeSingle();
   if(error||!data) return NextResponse.json({ok:false,error:error?.message||'Work item not found'},{status:500});
 
-  return NextResponse.json({ok:true,item:data});
+  let verificationId:string|undefined;
+
+  if(action==='complete'){
+    const check=await supabase.from('admin_verification_checks').upsert({
+      entity_type:kind,
+      entity_key:id,
+      title:`Verify: ${data.title}`,
+      verification_stage:'implemented',
+      status:'open',
+      authority_level:'A3',
+      verification_question:'Is the recorded completion actually implemented as intended, and what evidence proves it?',
+      next_recheck_at:new Date().toISOString(),
+      notes:'Created automatically when Command work was marked completed.',
+      updated_at:new Date().toISOString()
+    },{onConflict:'entity_type,entity_key'}).select('id').single();
+
+    if(check.error||!check.data){
+      await supabase.from(table).update({status:'open',updated_at:new Date().toISOString()}).eq('id',id);
+      return NextResponse.json({ok:false,error:'Completion was rolled back because the VERA verification record could not be created.'},{status:500});
+    }
+    verificationId=check.data.id;
+  }
+
+  if(action==='reopen'){
+    await supabase.from('admin_verification_checks')
+      .update({status:'failed',notes:'Source work was reopened after completion.',updated_at:new Date().toISOString()})
+      .eq('entity_type',kind)
+      .eq('entity_key',id);
+  }
+
+  return NextResponse.json({ok:true,item:data,verificationId});
 }
