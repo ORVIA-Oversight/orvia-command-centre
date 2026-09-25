@@ -9,7 +9,7 @@ const nav=[
   {href:'/projects',label:'ORVIA Landscape',icon:ShieldCheck},
   {href:'/clients',label:'Client Workspaces',icon:Users},
   {href:'/library',label:'Evidence & Library',icon:BookOpen},
-  {href:'/systems',label:'Systems & Health',icon:Activity},
+  {href:'/systems',label:'Systems & Access',icon:Activity},
 ];
 
 export function Sidebar(){

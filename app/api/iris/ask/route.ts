@@ -24,12 +24,13 @@ export async function POST(req:NextRequest){
   if(!supabase) return NextResponse.json({status:'INCOMPLETE',reason:'I cannot reach the live ORVIA data right now, so I cannot answer reliably.'},{status:503});
 
   try{
-    const [assetsResult,tasksResult,queueResult,integrationsResult,clientsResult]=await Promise.all([
+    const [assetsResult,tasksResult,queueResult,integrationsResult,clientsResult,accessResult]=await Promise.all([
       supabase.from('orvia_asset_registry').select('asset_key,display_name,canonical_domain,canonical_url,estate_disposition,verification_status,deployment_project_name,desired_deployment_project_name,notes').order('display_name',{ascending:true}),
       supabase.from('admin_tasks').select('id,title,status,priority,approval_required,owner,due_at,updated_at').order('updated_at',{ascending:false}).limit(80),
       supabase.from('admin_work_queue').select('id,title,status,priority,approval_required,assigned_to,source_system,source_reference,created_at,updated_at').order('created_at',{ascending:false}).limit(80),
       supabase.from('admin_integrations').select('code,name,category,status,updated_at').order('updated_at',{ascending:false}).limit(80),
-      supabase.from('admin_organisations').select('id,metadata').limit(500)
+      supabase.from('admin_organisations').select('id,metadata').limit(500),
+      supabase.from('admin_access_accounts').select('service_name,migration_status,legacy_healthcare,mfa_state,vault_reference,current_state,action_required,current_login_email,target_orvia_email').order('service_name',{ascending:true})
     ]);
 
     const assets=assetsResult.data??[];
@@ -39,6 +40,11 @@ export async function POST(req:NextRequest){
     const assetKeys=resolveAssetKeys(question,assets);
     const clientRows=clientsResult.data??[];
     const clientCount=clientRows.filter((x:any)=>!(x.metadata&&x.metadata.internal_orvia===true)).length;
+    const accessRows=accessResult.data??[];
+    const accessVerify=accessRows.filter((x:any)=>x.migration_status==='VERIFY').length;
+    const accessLegacy=accessRows.filter((x:any)=>x.legacy_healthcare===true).length;
+    const mfaUnknown=accessRows.filter((x:any)=>!x.legacy_healthcare&&['TBD','','UNKNOWN'].includes(String(x.mfa_state||'').toUpperCase())).length;
+    const vaultUnknown=accessRows.filter((x:any)=>!x.legacy_healthcare&&['TBD','','UNKNOWN'].includes(String(x.vault_reference||'').toUpperCase())).length;
     const readOnly=isReadOnlyRequest(question);
     const authority=readOnly?'A0':classifyAuthority(question);
 
@@ -68,10 +74,17 @@ export async function POST(req:NextRequest){
       }
 
       const answer:string[]=[];
-      if(/\b(system|systems|integration|connected|connection|health|telemetry)\b/i.test(question)){
+      if(/\b(account|accounts|login|logins|access|credential|credentials|api key|api keys|password|passwords|mfa|vault|healthcare email|healthcare emails)\b/i.test(question)){
+        answer.push(`${accessRows.length} non-secret account/access records are controlled; ${accessVerify} still need login or ownership verification.`);
+        answer.push(`${accessLegacy} legacy Healthcare identity records remain for controlled migration; ${mfaUnknown} current accounts have unknown MFA state and ${vaultUnknown} have no assigned vault reference yet.`);
+        const attention=accessRows.filter((x:any)=>!x.legacy_healthcare&&x.migration_status!=='KEEP').slice(0,5);
+        if(attention.length) answer.push(`Current access actions: ${attention.map((x:any)=>`${x.service_name} — ${x.migration_status}`).join('; ')}.`);
+        answer.push('Command stores no password or API-key values; it records only the vault or provider secret-store location.');
+      }else if(/\b(system|systems|integration|connected|connection|health|telemetry)\b/i.test(question)){
         answer.push(`${integrations.length} system connections are recorded; ${systemIssues.length} are not currently in a connected/configured/verified state.`);
         if(systemIssues.length) answer.push(`Needs attention: ${systemIssues.slice(0,4).map((x:any)=>x.name).join(', ')}.`);
         answer.push(`${estateCurrent.length} current ORVIA assets are in the registry; ${estateReview.length} still need reconciliation or verification.`);
+        answer.push(`${accessVerify} access records still need identity verification and ${accessLegacy} legacy Healthcare records remain in the migration queue.`);
       }else if(/\b(client|customer)\b/i.test(question)){
         answer.push(`${clientCount} external client organisation${clientCount===1?' is':'s are'} currently recorded in the master organisation register.`);
         answer.push('I will not invent client workspaces where no controlled customer record exists.');
