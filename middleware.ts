@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const ORVIA_SESSION_COOKIE = 'orvia_session';
-const WORKSPACE_LOGIN = 'https://workspace.orvia.org.uk/login';
+const WORKSPACE_LOGIN = 'https://workspace.orvia.org.uk/api/auth/login';
 const WORKSPACE_VERIFY = 'https://workspace.orvia.org.uk/api/auth/command-verify';
 
 async function verifyCommandSession(token?: string) {
