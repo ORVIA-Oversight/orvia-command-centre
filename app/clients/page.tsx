@@ -4,6 +4,9 @@ import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
 import { getServerSupabase } from '@/lib/supabase-server';
 
+export const dynamic='force-dynamic';
+export const revalidate=0;
+
 async function loadClients(){
  const supabase=getServerSupabase();
  if(!supabase)return {source:'review-build',clients:[],projects:[]};

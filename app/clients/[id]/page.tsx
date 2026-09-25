@@ -5,6 +5,9 @@ import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
 import { getServerSupabase } from '@/lib/supabase-server';
 
+export const dynamic='force-dynamic';
+export const revalidate=0;
+
 export default async function ClientWorkspace({params}:{params:Promise<{id:string}>}){
  const {id}=await params; const supabase=getServerSupabase(); if(!supabase)notFound();
  const [clientResult,projectResult]=await Promise.all([
