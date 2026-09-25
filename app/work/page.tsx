@@ -30,7 +30,7 @@ function active(status:string){return !done(status)&&!blocked(status);}
 export default async function WorkPage(){
  const data=await loadWork();
  const approvals=data.rows.filter(x=>!done(x.status)&&x.approval_required===true);
- const review=data.rows.filter(x=>blocked(x.status));
+ const review=data.rows.filter(x=>blocked(x.status)&&x.approval_required!==true);
  const progress=data.rows.filter(x=>active(x.status)&&x.approval_required!==true);
  const complete=data.rows.filter(x=>done(x.status));
 
