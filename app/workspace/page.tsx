@@ -5,6 +5,9 @@ import { Topbar } from '@/components/Topbar';
 import { loadOrviaAssets, isCurrentAsset, isLegacyAsset } from '@/lib/asset-registry';
 import { getServerSupabase } from '@/lib/supabase-server';
 
+export const dynamic='force-dynamic';
+export const revalidate=0;
+
 async function loadWorkspace(){
  const supabase=getServerSupabase();
  const assetState=await loadOrviaAssets();
