@@ -42,3 +42,8 @@
 
 @media(max-width:1200px){.workspaceBuckets{grid-template-columns:repeat(3,1fr)}.workspaceColumns{grid-template-columns:1fr}.workBoard{grid-template-columns:repeat(2,1fr)}.workspaceProjectGrid,.workspaceClientCards{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:820px){.commandWorkspace{grid-template-columns:1fr}.commandThreads{display:none}.conversationHeader{align-items:flex-start;flex-direction:column}.conversationStatus{justify-content:flex-start}.workspaceBuckets{grid-template-columns:1fr 1fr}.workspaceProjectGrid,.workspaceClientCards,.workspaceClientProjectGrid,.workspaceAccessGrid,.workBoard{grid-template-columns:1fr}.workspaceHero{align-items:flex-start;flex-direction:column}.quickPrompts{padding-left:15px;padding-right:15px}.messageStream,.conversationHeader,.chatComposer{padding-left:15px;padding-right:15px}}
+
+.workActions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,255,255,.06)}
+.workActions button{border:0;border-radius:8px;background:var(--gold);color:var(--navy);font-size:7px;font-weight:900;padding:6px 8px;cursor:pointer}
+.workActions button.secondary{background:rgba(255,255,255,.055);color:#cbd3d9;border:1px solid rgba(255,255,255,.08)}
+.workActions button:disabled{opacity:.5;cursor:default}
