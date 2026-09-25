@@ -45,3 +45,15 @@ export function isLegacyAsset(asset:OrviaAsset){
 export function assetHref(asset:OrviaAsset){
   return '/projects/'+asset.asset_key;
 }
+
+
+export async function loadOrviaAsset(assetKey:string){
+  const supabase=getServerSupabase();
+  if(!supabase) return {source:'unavailable' as const,asset:null as OrviaAsset|null,error:'Supabase not configured'};
+  const {data,error}=await supabase
+    .from('orvia_asset_registry')
+    .select('asset_key,display_name,asset_type,parent_asset_key,canonical_domain,canonical_url,github_repo,production_branch,deployment_project_name,desired_deployment_project_name,accent_key,accent_hex,lifecycle_status,verification_status,authority_level,sensitivity_class,public_surface,automation_enabled,estate_disposition,notes,updated_at')
+    .eq('asset_key',assetKey)
+    .maybeSingle();
+  return {source:error?'error' as const:'live' as const,asset:(data??null) as OrviaAsset|null,error:error?.message??null};
+}
