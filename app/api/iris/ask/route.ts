@@ -29,7 +29,7 @@ export async function POST(req:NextRequest){
       supabase.from('admin_tasks').select('id,title,status,priority,approval_required,owner,due_at,updated_at').order('updated_at',{ascending:false}).limit(80),
       supabase.from('admin_work_queue').select('id,title,status,priority,approval_required,assigned_to,source_system,source_reference,created_at,updated_at').order('created_at',{ascending:false}).limit(80),
       supabase.from('admin_integrations').select('code,name,category,status,updated_at').order('updated_at',{ascending:false}).limit(80),
-      supabase.from('web_customers').select('id',{count:'exact',head:true})
+      supabase.from('admin_organisations').select('id,metadata').limit(500)
     ]);
 
     const assets=assetsResult.data??[];
@@ -37,6 +37,8 @@ export async function POST(req:NextRequest){
     const queue=queueResult.data??[];
     const integrations=integrationsResult.data??[];
     const assetKeys=resolveAssetKeys(question,assets);
+    const clientRows=clientsResult.data??[];
+    const clientCount=clientRows.filter((x:any)=>!(x.metadata&&x.metadata.internal_orvia===true)).length;
     const readOnly=isReadOnlyRequest(question);
     const authority=readOnly?'A0':classifyAuthority(question);
 
@@ -71,7 +73,7 @@ export async function POST(req:NextRequest){
         if(systemIssues.length) answer.push(`Needs attention: ${systemIssues.slice(0,4).map((x:any)=>x.name).join(', ')}.`);
         answer.push(`${estateCurrent.length} current ORVIA assets are in the registry; ${estateReview.length} still need reconciliation or verification.`);
       }else if(/\b(client|customer)\b/i.test(question)){
-        answer.push(`${clientsResult.count??0} Web customer record${(clientsResult.count??0)===1?' is':'s are'} currently recorded.`);
+        answer.push(`${clientCount} external client organisation${clientCount===1?' is':'s are'} currently recorded in the master organisation register.`);
         answer.push('I will not invent client workspaces where no controlled customer record exists.');
       }else{
         answer.push(`${approvals.length} item${approvals.length===1?' needs':'s need'} your approval.`);

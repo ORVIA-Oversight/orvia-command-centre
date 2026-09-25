@@ -22,13 +22,15 @@ export async function GET(){
   supabase.from('admin_work_queue').select('id,title,status,priority,approval_required,assigned_to,source_system,source_reference,created_at,updated_at').order('created_at',{ascending:false}).limit(100),
   supabase.from('orvia_asset_registry').select('asset_key,display_name,estate_disposition,verification_status,canonical_domain,updated_at').order('display_name',{ascending:true}),
   supabase.from('admin_integrations').select('code,name,category,status,updated_at').order('updated_at',{ascending:false}).limit(100),
-  supabase.from('web_customers').select('id',{count:'exact',head:true})
+  supabase.from('admin_organisations').select('id,metadata').limit(500)
  ]);
 
  const taskRows=tasks.data??[];
  const queueRows=queue.data??[];
  const assetRows=assets.data??[];
  const integrationRows=integrations.data??[];
+ const clientRows=clients.data??[];
+ const clientCount=clientRows.filter((x:any)=>!(x.metadata&&x.metadata.internal_orvia===true)).length;
 
  const active=(x:any)=>!['completed','closed','done','cancelled'].includes(String(x.status||'').toLowerCase());
  const activeTasks=taskRows.filter(active);
@@ -45,7 +47,7 @@ export async function GET(){
    estate:currentAssets.length,
    estateReview:estateReview.length,
    systemIssues:systemIssues.length,
-   clients:clients.count??0,
+   clients:clientCount,
    recentWork:activeQueue.slice(0,6).map((x:any)=>({
      id:x.id,title:x.title,status:x.status,priority:x.priority,approval_required:x.approval_required,
      source_reference:x.source_reference,created_at:x.created_at
