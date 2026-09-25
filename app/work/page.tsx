@@ -2,6 +2,7 @@ import { CheckCircle2, CircleAlert, Clock3, ShieldCheck } from 'lucide-react';
 import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
 import { getServerSupabase } from '@/lib/supabase-server';
+import { WorkItemActions } from '@/components/WorkItemActions';
 
 export const dynamic='force-dynamic';
 export const revalidate=0;
@@ -51,6 +52,7 @@ export default async function WorkPage(){
       <strong>{row.title}</strong>
       <p>{row.source_reference||row.source_system||row.owner||row.assigned_to||'ORVIA'}</p>
       <footer><span>{String(row.status).replaceAll('_',' ')}</span>{row.approval_required&&<em>Approval required</em>}</footer>
+      <WorkItemActions id={row.id} kind={row.kind} status={row.status} approvalRequired={row.approval_required===true}/>
      </div>)}
      {!rows.length&&<div className="workEmpty">Nothing here.</div>}
     </div>
