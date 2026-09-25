@@ -1,45 +1,55 @@
 import { NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase-server';
 
+export const dynamic='force-dynamic';
+
 export async function GET(){
  const supabase=getServerSupabase();
- if(!supabase) return NextResponse.json({source:'review-build',openTasks:8,approvals:7,warning:'Live Supabase environment variables not configured.',outbound:{source:'unavailable',campaigns:[]}});
-
- const [tasks,approvals,integrations,campaigns,leads,attempts,calls,numbers]=await Promise.all([
-  supabase.from('admin_tasks').select('*',{count:'exact',head:true}).neq('status','completed'),
-  supabase.from('admin_tasks').select('*',{count:'exact',head:true}).neq('status','completed').eq('approval_required',true),
-  supabase.from('admin_integrations').select('code,name,category,status,updated_at').order('updated_at',{ascending:false}).limit(30),
-  supabase.from('voice_outbound_campaigns').select('id,name,offer_code,status,target_sector,daily_call_cap,timezone,calling_window,prompt_version,objective,updated_at').order('updated_at',{ascending:false}).limit(12),
-  supabase.from('voice_outbound_leads').select('id,campaign_id,status,eligible_to_call,disposition,qualification_score,booking_id,updated_at').limit(500),
-  supabase.from('voice_outbound_attempts').select('id,campaign_id,status,disposition,handoff_required,booking_id,started_at,ended_at,updated_at').order('updated_at',{ascending:false}).limit(500),
-  supabase.from('voice_calls').select('id,status,outcome,duration_seconds,human_handoff_required,started_at,ended_at,updated_at').eq('direction','outbound').order('updated_at',{ascending:false}).limit(100),
-  supabase.from('voice_numbers').select('display_number,e164_number,provider,purpose,status,is_primary,updated_at').order('is_primary',{ascending:false}).limit(5)
- ]);
-
- const leadRows=leads.data??[];
- const attemptRows=attempts.data??[];
- const campaignRows=(campaigns.data??[]).map((campaign:any)=>{
-  const cLeads=leadRows.filter((lead:any)=>lead.campaign_id===campaign.id);
-  const cAttempts=attemptRows.filter((attempt:any)=>attempt.campaign_id===campaign.id);
-  const answered=cAttempts.filter((attempt:any)=>Boolean(attempt.started_at) && !['queued','scheduled','created'].includes(String(attempt.status||'').toLowerCase())).length;
-  const bookings=cAttempts.filter((attempt:any)=>Boolean(attempt.booking_id)).length || cLeads.filter((lead:any)=>Boolean(lead.booking_id)).length;
-  const handoffs=cAttempts.filter((attempt:any)=>attempt.handoff_required===true).length;
-  const eligible=cLeads.filter((lead:any)=>lead.eligible_to_call===true).length;
-  const lastActivity=[campaign.updated_at,...cAttempts.map((a:any)=>a.updated_at),...cLeads.map((l:any)=>l.updated_at)].filter(Boolean).sort().at(-1)??null;
-  return {...campaign,metrics:{leads:cLeads.length,eligible,attempts:cAttempts.length,answered,bookings,handoffs,lastActivity}};
+ if(!supabase) return NextResponse.json({
+   source:'unavailable',
+   openWork:null,
+   approvals:null,
+   estate:null,
+   estateReview:null,
+   systemIssues:null,
+   clients:null,
+   recentWork:[],
+   warning:'Live Supabase environment variables are not configured.'
  });
 
+ const [tasks,queue,assets,integrations,clients]=await Promise.all([
+  supabase.from('admin_tasks').select('id,title,status,priority,approval_required,updated_at').order('updated_at',{ascending:false}).limit(100),
+  supabase.from('admin_work_queue').select('id,title,status,priority,approval_required,assigned_to,source_system,source_reference,created_at,updated_at').order('created_at',{ascending:false}).limit(100),
+  supabase.from('orvia_asset_registry').select('asset_key,display_name,estate_disposition,verification_status,canonical_domain,updated_at').order('display_name',{ascending:true}),
+  supabase.from('admin_integrations').select('code,name,category,status,updated_at').order('updated_at',{ascending:false}).limit(100),
+  supabase.from('web_customers').select('id',{count:'exact',head:true})
+ ]);
+
+ const taskRows=tasks.data??[];
+ const queueRows=queue.data??[];
+ const assetRows=assets.data??[];
+ const integrationRows=integrations.data??[];
+
+ const active=(x:any)=>!['completed','closed','done','cancelled'].includes(String(x.status||'').toLowerCase());
+ const activeTasks=taskRows.filter(active);
+ const activeQueue=queueRows.filter(active);
+ const approvals=[...activeTasks,...activeQueue].filter((x:any)=>x.approval_required===true);
+ const currentAssets=assetRows.filter((x:any)=>['keep','rename','temporary','hold'].includes(String(x.estate_disposition||'').toLowerCase()));
+ const estateReview=currentAssets.filter((x:any)=>String(x.estate_disposition||'').toLowerCase()!=='keep'||!/verified/i.test(String(x.verification_status||'')));
+ const systemIssues=integrationRows.filter((x:any)=>!['connected','configured','ready','live verified','verified'].includes(String(x.status||'').toLowerCase()));
+
  return NextResponse.json({
-  source:'live',
-  openTasks:tasks.count??0,
-  approvals:approvals.count??0,
-  integrations:integrations.data??[],
-  outbound:{
    source:'live',
-   primaryNumber:(numbers.data??[]).find((number:any)=>number.is_primary)??numbers.data?.[0]??null,
-   campaigns:campaignRows,
-   recentCalls:calls.data??[]
-  },
-  errors:[tasks.error?.message,approvals.error?.message,integrations.error?.message,campaigns.error?.message,leads.error?.message,attempts.error?.message,calls.error?.message,numbers.error?.message].filter(Boolean)
+   openWork:activeTasks.length+activeQueue.length,
+   approvals:approvals.length,
+   estate:currentAssets.length,
+   estateReview:estateReview.length,
+   systemIssues:systemIssues.length,
+   clients:clients.count??0,
+   recentWork:activeQueue.slice(0,6).map((x:any)=>({
+     id:x.id,title:x.title,status:x.status,priority:x.priority,approval_required:x.approval_required,
+     source_reference:x.source_reference,created_at:x.created_at
+   })),
+   errors:[tasks.error?.message,queue.error?.message,assets.error?.message,integrations.error?.message,clients.error?.message].filter(Boolean)
  });
 }

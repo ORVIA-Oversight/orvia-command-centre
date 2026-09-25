@@ -45,13 +45,13 @@ export const projects: ProjectRecord[] = [
     evidenceNote: 'Custom domain was attached by the Founder; repository exists and this catalogue lives inside it.'
   },
   {
-    slug: 'workspace-brain', name: 'ORVIA Workspace & Brain', shortName: 'WORKSPACE', category: 'Core ORVIA', status: 'LIVE VERIFIED',
-    description: 'Authenticated ORVIA home and operational conductor. Brain provides governed orchestration; Workspace is the human-facing gateway.',
+    slug: 'workspace-brain', name: 'ORVIA Workspace Access', shortName: 'ACCESS', category: 'Core ORVIA', status: 'LIVE VERIFIED',
+    description: 'Current authenticated access/session gateway for ORVIA Command. The visible Founder workspace is being consolidated into Command; this service is not an orchestration authority.',
     website: 'https://workspace.orvia.org.uk', websiteLabel: 'workspace.orvia.org.uk', github: 'https://github.com/ORVIA-Oversight/orvia-brain-prototype', parentWebsite: 'https://www.orvia.org.uk', visual: 'site',
-    workstreams: ['Founder workspace', 'Brain conductor', 'Orchestra routing', 'Human approval gates', 'Mailbox/tool integrations'],
-    nextActions: ['Keep Command and Workspace roles distinct.', 'Expose verified Brain/IRIS capability to Command without duplicating orchestration.', 'Preserve human authority for consequential actions.'],
-    commercialSurface: 'Authenticated workspace/platform; public selling remains on ORVIA and product sales sites.',
-    evidenceNote: 'Vercel production alias workspace.orvia.org.uk is verified on the connected production deployment.'
+    workstreams: ['Authentication gateway', 'Session verification', 'Legacy Brain asset recovery', 'Controlled migration to Command/IRIS'],
+    nextActions: ['Keep the existing login/session route stable while My Workspace moves into Command.', 'Harvest any useful legacy Brain prompts/schemas into IRIS/HIVE.', 'Archive Brain as a runtime once replacement authentication and routing are verified.'],
+    commercialSurface: 'Private access infrastructure only. Command is the operational workspace; IRIS is the sole orchestration authority.',
+    evidenceNote: 'workspace.orvia.org.uk remains the current session-verification dependency in Command middleware. Do not retire it until replacement authentication is live verified.'
   },
   {
     slug: 'iris', name: 'IRIS', shortName: 'IRIS', category: 'Internal / shared engine', status: 'LIVE — USER CONFIRMED',
