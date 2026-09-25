@@ -28,3 +28,26 @@ jobs:
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: '1'
+      - name: Runtime smoke
+        env:
+          COMMAND_PRIVATE_MODE: 'true'
+          COMMAND_USERNAME: verify
+          COMMAND_PASSWORD: verify
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          npm run start -- -p 3000 > /tmp/command-v3.log 2>&1 &
+          APP_PID=$!
+          trap 'kill $APP_PID || true; cat /tmp/command-v3.log' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS -u verify:verify http://127.0.0.1:3000/ >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS -u verify:verify http://127.0.0.1:3000/ >/dev/null
+          curl -fsS -u verify:verify http://127.0.0.1:3000/workspace >/dev/null
+          curl -fsS -u verify:verify http://127.0.0.1:3000/work >/dev/null
+          curl -fsS -u verify:verify http://127.0.0.1:3000/projects >/dev/null
+          curl -fsS -u verify:verify http://127.0.0.1:3000/clients >/dev/null
+          curl -fsS -u verify:verify http://127.0.0.1:3000/library >/dev/null
+          curl -fsS -u verify:verify http://127.0.0.1:3000/systems >/dev/null
