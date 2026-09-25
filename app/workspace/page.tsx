@@ -4,21 +4,20 @@ import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
 import { loadOrviaAssets, isCurrentAsset, isLegacyAsset } from '@/lib/asset-registry';
 import { getServerSupabase } from '@/lib/supabase-server';
+import { isInternalOrviaOrganisation, loadClientRegistry, organisationName, servicesForOrganisation } from '@/lib/client-registry';
 
 export const dynamic='force-dynamic';
 export const revalidate=0;
 
 async function loadWorkspace(){
  const supabase=getServerSupabase();
- const assetState=await loadOrviaAssets();
- if(!supabase) return {source:'review-build',tasks:[],queue:[],clients:[],webProjects:[],assets:assetState.assets,assetSource:assetState.source};
- const [tasks,queue,clients,webProjects]=await Promise.all([
+ const [assetState,clientRegistry]=await Promise.all([loadOrviaAssets(),loadClientRegistry()]);
+ if(!supabase) return {source:'review-build',tasks:[],queue:[],assets:assetState.assets,assetSource:assetState.source,clientRegistry};
+ const [tasks,queue]=await Promise.all([
   supabase.from('admin_tasks').select('id,title,status,priority,owner,due_at,approval_required,updated_at').order('updated_at',{ascending:false}).limit(60),
-  supabase.from('admin_work_queue').select('id,title,status,priority,assigned_to,approval_required,source_system,updated_at').order('updated_at',{ascending:false}).limit(60),
-  supabase.from('web_customers').select('id,name,business,email,updated_at').order('updated_at',{ascending:false}).limit(50),
-  supabase.from('web_projects').select('id,customer_id,project_code,state,domain,preview_url,live_url,version_label,next_action,orvia_action,updated_at').order('updated_at',{ascending:false}).limit(100)
+  supabase.from('admin_work_queue').select('id,title,status,priority,assigned_to,approval_required,source_system,updated_at').order('updated_at',{ascending:false}).limit(60)
  ]);
- return {source:'live',tasks:tasks.data??[],queue:queue.data??[],clients:clients.data??[],webProjects:webProjects.data??[],assets:assetState.assets,assetSource:assetState.source};
+ return {source:'live',tasks:tasks.data??[],queue:queue.data??[],assets:assetState.assets,assetSource:assetState.source,clientRegistry};
 }
 
 function accentClass(key:string|null){
@@ -33,6 +32,7 @@ export default async function WorkspacePage(){
  const blocked=[...data.tasks,...data.queue].filter((x:any)=>['blocked','failed','needs_human','review_required'].includes(String(x.status||'').toLowerCase()));
  const completed=[...data.tasks,...data.queue].filter((x:any)=>['completed','closed','done'].includes(String(x.status||'').toLowerCase()));
  const reviewCount=currentAssets.filter(a=>['rename','temporary','hold'].includes(a.estate_disposition)||!/verified/i.test(a.verification_status||'')).length;
+ const clients=data.clientRegistry.organisations.filter(org=>!isInternalOrviaOrganisation(org));
 
  return <Shell><Topbar title="My Workspace" eyebrow="ORVIA OVERSIGHT LTD · FOUNDER WORKSPACE"/><div className="pageWrap founderWorkspace">
   <section className="workspaceHero">
@@ -56,10 +56,12 @@ export default async function WorkspacePage(){
 
    <article className="workspacePanel">
     <header><div><small>CLIENT WORKSPACES</small><h3>Customer and client work</h3></div><Link href="/clients">Open clients <ArrowRight size={14}/></Link></header>
-    {data.clients.length?<div className="workspaceClientList">{data.clients.slice(0,8).map((client:any)=>{
-      const count=data.webProjects.filter((p:any)=>p.customer_id===client.id).length;
-      return <Link href={'/clients/'+client.id} key={client.id}><Building2 size={17}/><span><b>{client.business||client.name||client.email}</b><small>{count} recorded project{count===1?'':'s'}</small></span><ArrowRight size={14}/></Link>
-    })}</div>:<div className="workspaceEmpty"><Users size={22}/><b>No verified client records returned</b><span>Client workspaces will appear from controlled customer/project records.</span></div>}
+    {clients.length?<div className="workspaceClientList">{clients.slice(0,8).map(org=>{
+      const services=servicesForOrganisation(org.id,data.clientRegistry);
+      const serviceNames=[services.voice.length?'Voice':null,(services.webCustomers.length||services.webProjects.length)?'Web':null].filter(Boolean);
+      const count=services.voice.length+services.webProjects.length;
+      return <Link href={'/clients/'+org.id} key={org.id}><Building2 size={17}/><span><b>{organisationName(org)}</b><small>{serviceNames.length?serviceNames.join(' · '):'No service attached yet'} · {count} service/project record{count===1?'':'s'}</small></span><ArrowRight size={14}/></Link>
+    })}</div>:<div className="workspaceEmpty"><Users size={22}/><b>No external client organisations recorded yet</b><span>The internal ORVIA organisation is excluded. New clients will appear from the master organisation register.</span></div>}
    </article>
   </section>
 
