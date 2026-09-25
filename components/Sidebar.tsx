@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Activity, BookOpen, BriefcaseBusiness, FolderKanban, Home, ShieldCheck, Users } from 'lucide-react';
+import { Activity, BadgeCheck, BookOpen, BriefcaseBusiness, FolderKanban, Home, ShieldCheck, Users } from 'lucide-react';
 
 const nav=[
   {href:'/workspace',label:'My Workspace',icon:BriefcaseBusiness},
@@ -9,6 +9,7 @@ const nav=[
   {href:'/projects',label:'ORVIA Landscape',icon:ShieldCheck},
   {href:'/clients',label:'Client Workspaces',icon:Users},
   {href:'/library',label:'Evidence & Library',icon:BookOpen},
+  {href:'/assurance',label:'Assurance',icon:BadgeCheck},
   {href:'/systems',label:'Systems & Access',icon:Activity},
 ];
 
