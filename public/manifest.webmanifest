@@ -1,0 +1,47 @@
+{
+  "name": "ORVIA Command",
+  "short_name": "ORVIA",
+  "description": "ORVIA Oversight founder command, evidence and intelligence workspace",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#FAF7F2",
+  "theme_color": "#0B2450",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Talk to IRIS",
+      "short_name": "IRIS",
+      "url": "/",
+      "icons": [{"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+    },
+    {
+      "name": "My Workspace",
+      "short_name": "Workspace",
+      "url": "/workspace",
+      "icons": [{"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+    },
+    {
+      "name": "Work & Approvals",
+      "short_name": "Work",
+      "url": "/work",
+      "icons": [{"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+    }
+  ]
+}
