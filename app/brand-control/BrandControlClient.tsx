@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import {
   Activity, BarChart3, CheckCircle2, CircleAlert, FileImage, Globe2,
   Megaphone, Mic2, Palette, Plus, Share2, Sparkles, Video, WandSparkles
@@ -146,7 +146,7 @@ export function BrandControlClient({
 
         {tab==='overview' && <>
           <section className="bcStatusCard">
-            <div className="bcHealthRing" style={{'--health':`${health*3.6}deg`} as React.CSSProperties}><span>{health}%</span></div>
+            <div className="bcHealthRing" style={{'--health':`${health*3.6}deg`} as CSSProperties}><span>{health}%</span></div>
             <div>
               <h2>{reviewAssets.length ? 'Brand health needs attention' : 'Brand estate is aligned'}</h2>
               <p>{currentAssets.length} controlled surfaces · {reviewAssets.length} need reconciliation or verification</p>
