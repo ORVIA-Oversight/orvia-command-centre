@@ -4,6 +4,7 @@ import { getServerSupabase } from '@/lib/supabase-server';
 
 export const dynamic='force-dynamic';
 export const revalidate=0;
+// Brand Control production deployment trigger: 2026-09-28
 
 async function loadBrandControl(){
   const supabase=getServerSupabase();
