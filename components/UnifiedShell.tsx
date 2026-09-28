@@ -12,7 +12,7 @@ export function UnifiedShell({context,title,children}:{context:PlatformContext;t
         <b>{context.organisation||context.email||'ORVIA Workspace'}</b>
       </div>
       <nav className="unifiedNav">
-        {context.modules.map(m=><Link href={m.href} key={m.id} className={"unifiedNavItem tone-"+m.accent}>
+        {context.modules.map(m=><Link href={m.href} key={m.id} className={'unifiedNavItem tone-'+m.accent}>
           <span className="navTone"/><span><b>{m.label}</b><small>{m.description}</small></span>
         </Link>)}
       </nav>
