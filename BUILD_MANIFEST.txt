@@ -1,0 +1,5 @@
+ORVIA Unified Suite Drag-In Build
+Source branch: ORVIA-Oversight/orvia-command-centre / build/unified-orvia-suite
+Integration commit: 628e9c2c6ca2677a75fc4ad90ece0ba025f33ea0
+Draft PR: #13
+Purpose: unified internal/customer shell, service-aware modules, report bootstrap
