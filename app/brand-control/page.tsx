@@ -1,3 +1,4 @@
+import './brand-control.css';
 import { BrandControlClient } from './BrandControlClient';
 import { getServerSupabase } from '@/lib/supabase-server';
 
