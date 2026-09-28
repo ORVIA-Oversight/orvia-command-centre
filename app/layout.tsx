@@ -5,13 +5,13 @@ import './production.css';
 import { PwaRegister } from '@/components/PwaRegister';
 
 export const metadata: Metadata = {
-  title: 'ORVIA Command',
-  description: 'ORVIA Oversight founder command, evidence and intelligence workspace',
+  title: 'ORVIA Brand Control',
+  description: 'Internal ORVIA brand, social, media, voice and publishing control workspace',
   manifest: '/manifest.webmanifest',
-  applicationName: 'ORVIA Oversight',
+  applicationName: 'ORVIA Brand Control',
   appleWebApp: {
     capable: true,
-    title: 'ORVIA Command',
+    title: 'ORVIA Brand Control',
     statusBarStyle: 'default'
   },
   icons: {
