@@ -1,5 +1,3 @@
-import type { ComponentType } from 'react';
-
 export type PlatformMode = 'internal' | 'customer';
 export type PlatformModule = {
   id:string;
