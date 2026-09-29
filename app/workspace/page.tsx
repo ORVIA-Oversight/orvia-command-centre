@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, Building2, CheckCircle2, CircleAlert, Clock3, ExternalLink, ShieldCheck, Users } from 'lucide-react';
 import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
+import { LiveOpsFloor } from '@/components/LiveOpsFloor';
 import { loadOrviaAssets, isCurrentAsset, isLegacyAsset } from '@/lib/asset-registry';
 import { getServerSupabase } from '@/lib/supabase-server';
 import { isInternalOrviaOrganisation, loadClientRegistry, organisationName, servicesForOrganisation } from '@/lib/client-registry';
@@ -88,6 +89,8 @@ export default async function WorkspacePage(){
      </div>
    </article>)}</div>
   </section>
+
+  <LiveOpsFloor />
 
   <section className="workspaceColumns">
    <article className="workspacePanel">
