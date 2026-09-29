@@ -1,6 +1,22 @@
 'use client';
+
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, MessageSquarePlus, Send, TriangleAlert, Volume2, VolumeX } from 'lucide-react';
+import {
+  Activity, BarChart3, Bot, CheckCircle2, ChevronRight, FileStack, Globe2,
+  Layers3, Link2, MessageSquarePlus, Mic2, Palette, Send, ShieldCheck,
+  Sparkles, TriangleAlert, Users, Video, Workflow
+} from 'lucide-react';
+
+type WorkItem={
+  id:string;
+  title:string;
+  status:string;
+  priority:string;
+  approval_required:boolean;
+  source_reference?:string|null;
+  created_at?:string|null;
+};
 
 type DashboardState={
   source?:string;
@@ -11,144 +27,152 @@ type DashboardState={
   systemIssues?:number|null;
   clients?:number|null;
   warning?:string;
-  recentWork?:Array<{id:string;title:string;status:string;priority:string;approval_required:boolean;source_reference?:string|null}>;
-};
-type IrisState={status?:string;answer?:string;reason?:string;authority?:string;approvalRequired?:boolean};
-type ChatMessage={id:string;role:'user'|'iris';text:string;status?:'ok'|'warn';createdAt:number};
-type Thread={id:string;title:string;messages:ChatMessage[];updatedAt:number};
-
-const starterThread:Thread={
- id:'today',
- title:'Today with IRIS',
- updatedAt:Date.now(),
- messages:[{id:'welcome',role:'iris',text:'Good evening John. Tell me what you need. I will read live ORVIA state first, create work only when you actually ask for action, and hold anything above delegated authority.',status:'ok',createdAt:Date.now()}]
+  recentWork?:WorkItem[];
 };
 
-const quickPrompts=[
- 'What needs my attention today?',
- 'Give me a live ORVIA estate summary.',
- 'Which systems are not verified?',
- 'Show me current blockers.'
+type IrisState={status?:string;answer?:string;reason?:string};
+
+const modules=[
+  {href:'/social',label:'Social Studio',desc:'Plan, approve and measure social activity.',icon:Sparkles,tone:'purple'},
+  {href:'/production',label:'Media Lab',desc:'Create and manage approved media production.',icon:Video,tone:'gold'},
+  {href:'/',label:'IRIS Command',desc:'Ask once. IRIS conducts the work.',icon:Bot,tone:'teal'},
+  {href:'/projects',label:'Web & Assets',desc:'Keep the digital estate aligned and controlled.',icon:Layers3,tone:'blue'},
+  {href:'/intelligence',label:'Intelligence',desc:'See evidence, signals and operational insight.',icon:Activity,tone:'pink'},
+  {href:'/portal/reports',label:'Reports & KPI',desc:'Track outcomes across the ORVIA landscape.',icon:BarChart3,tone:'purple'},
 ];
 
+function norm(value?:string){return String(value||'').toLowerCase().replace(/[_-]+/g,' ')}
+function bucket(item:WorkItem){
+  const s=norm(item.status);
+  if(/complete|closed|done/.test(s)) return 'done';
+  if(/block|fail|hold/.test(s)) return 'blocked';
+  if(item.approval_required||/review|approval|waiting/.test(s)) return 'review';
+  if(/progress|running|active|started/.test(s)) return 'progress';
+  return 'todo';
+}
+
 export function DashboardHome(){
- const [command,setCommand]=useState('');
- const [sending,setSending]=useState(false);
- const [voiceOn,setVoiceOn]=useState(true);
- const [dashboard,setDashboard]=useState<DashboardState|null>(null);
- const [threads,setThreads]=useState<Thread[]>([starterThread]);
- const [activeThreadId,setActiveThreadId]=useState('today');
+  const [dashboard,setDashboard]=useState<DashboardState|null>(null);
+  const [command,setCommand]=useState('');
+  const [sending,setSending]=useState(false);
+  const [irisMessage,setIrisMessage]=useState('');
 
- useEffect(()=>{
-  fetch('/api/dashboard',{cache:'no-store'}).then(r=>r.json()).then(setDashboard).catch(()=>setDashboard({source:'unavailable'}));
-  try{
-   const saved=window.localStorage.getItem('orvia-command-threads-v2');
-   if(saved){
-    const parsed=JSON.parse(saved) as Thread[];
-    if(Array.isArray(parsed)&&parsed.length){setThreads(parsed);setActiveThreadId(parsed[0].id);}
-   }
-  }catch{}
- },[]);
+  useEffect(()=>{
+    fetch('/api/dashboard',{cache:'no-store'})
+      .then(r=>r.json())
+      .then(setDashboard)
+      .catch(()=>setDashboard({source:'unavailable',warning:'Live dashboard connection unavailable.'}));
+  },[]);
 
- useEffect(()=>{
-  try{window.localStorage.setItem('orvia-command-threads-v2',JSON.stringify(threads.slice(0,30)));}catch{}
- },[threads]);
+  const live=dashboard?.source==='live';
+  const work=dashboard?.recentWork??[];
+  const columns=useMemo(()=>({
+    todo:work.filter(x=>bucket(x)==='todo'),
+    progress:work.filter(x=>bucket(x)==='progress'),
+    review:work.filter(x=>bucket(x)==='review'),
+    done:work.filter(x=>bucket(x)==='done'),
+    blocked:work.filter(x=>bucket(x)==='blocked'),
+  }),[work]);
 
- const activeThread=threads.find(t=>t.id===activeThreadId)??threads[0];
- const live=dashboard?.source==='live';
-
- const statusLine=useMemo(()=>{
-  if(!live) return 'Live work state is not verified yet. IRIS will not guess.';
-  const approvals=dashboard?.approvals??0;
-  const open=dashboard?.openWork??0;
-  const issues=dashboard?.systemIssues??0;
-  if(approvals>0) return `${approvals} decision${approvals===1?' needs':'s need'} you. ${open} active work item${open===1?'':'s'} remain recorded.`;
-  if(issues>0) return `Nothing currently needs approval. ${issues} system connection${issues===1?'':'s'} still need attention.`;
-  return `Nothing currently needs your approval. ${open} active work item${open===1?'':'s'} remain recorded.`;
- },[dashboard,live]);
-
- function speak(text:string){
-  if(!voiceOn||typeof window==='undefined'||!('speechSynthesis' in window)||!text)return;
-  window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);
-  const voices=window.speechSynthesis.getVoices();
-  const preferred=voices.find(v=>/en-GB/i.test(v.lang))||voices[0];
-  if(preferred)u.voice=preferred;
-  u.rate=1;u.pitch=1;window.speechSynthesis.speak(u);
- }
-
- function addMessage(threadId:string,message:ChatMessage){
-  setThreads(current=>current.map(t=>t.id===threadId?{...t,messages:[...t.messages,message],updatedAt:Date.now()}:t).sort((a,b)=>b.updatedAt-a.updatedAt));
- }
-
- function newThread(){
-  const id=`thread-${Date.now()}`;
-  const next:Thread={id,title:'New conversation',updatedAt:Date.now(),messages:[{id:`welcome-${id}`,role:'iris',text:'New conversation started. What do you want me to deal with?',status:'ok',createdAt:Date.now()}]};
-  setThreads(current=>[next,...current]);setActiveThreadId(id);setCommand('');
- }
-
- async function sendQuestion(raw?:string){
-  const question=(raw??command).trim();
-  if(!question||!activeThread)return;
-  const threadId=activeThread.id;
-  const firstUserMessage=!activeThread.messages.some(m=>m.role==='user');
-  addMessage(threadId,{id:`u-${Date.now()}`,role:'user',text:question,createdAt:Date.now()});
-  if(firstUserMessage){
-   const title=question.length>42?`${question.slice(0,42)}…`:question;
-   setThreads(current=>current.map(t=>t.id===threadId?{...t,title}:t));
+  async function askIris(){
+    const question=command.trim();
+    if(!question||sending)return;
+    setSending(true);setIrisMessage('');
+    try{
+      const r=await fetch('/api/iris/ask',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question,context:{pathname:'/',role:'founder',lens:'Command'}})});
+      const data:IrisState=await r.json().catch(()=>({status:'INCOMPLETE',reason:'IRIS did not return a readable response.'}));
+      setIrisMessage(data.status==='COMPLETE'&&data.answer?data.answer:(data.reason||'IRIS could not verify the answer.'));
+      setCommand('');
+      fetch('/api/dashboard',{cache:'no-store'}).then(x=>x.json()).then(setDashboard).catch(()=>{});
+    }catch{setIrisMessage('IRIS connection is not verified right now.');}
+    finally{setSending(false);}
   }
-  setCommand('');setSending(true);
-  try{
-   const transcript=activeThread.messages.slice(-10).map(m=>`${m.role==='user'?'John':'IRIS'}: ${m.text}`).join('\n');
-   const r=await fetch('/api/iris/ask',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question,context:{pathname:'/command',role:'founder',lens:'Command',transcript}})});
-   const data:IrisState=await r.json().catch(()=>({status:'INCOMPLETE',reason:'I need to verify the connection before answering reliably.'}));
-   const text=data.status==='COMPLETE'&&data.answer?data.answer:(data.reason||'I do not have enough verified information to answer that reliably.');
-   addMessage(threadId,{id:`i-${Date.now()}`,role:'iris',text,status:data.status==='COMPLETE'?'ok':'warn',createdAt:Date.now()});
-   if(data.status==='COMPLETE')speak(text);
-   fetch('/api/dashboard',{cache:'no-store'}).then(x=>x.json()).then(setDashboard).catch(()=>{});
-  }catch{
-   addMessage(threadId,{id:`i-${Date.now()}`,role:'iris',text:'I cannot verify the Command connection right now, so I will not guess.',status:'warn',createdAt:Date.now()});
-  }finally{setSending(false);}
- }
 
- function onKeyDown(e:React.KeyboardEvent<HTMLTextAreaElement>){
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendQuestion();}
- }
+  const metrics=[
+    {label:'Open work',value:live?dashboard?.openWork:'—',sub:'Live work state',icon:Workflow,tone:'blue'},
+    {label:'Needs approval',value:live?dashboard?.approvals:'—',sub:'Human authority retained',icon:ShieldCheck,tone:'purple'},
+    {label:'Estate surfaces',value:live?dashboard?.estate:'—',sub:live?`${dashboard?.estateReview??0} need review`:'Not verified',icon:Globe2,tone:'teal'},
+    {label:'Client organisations',value:live?dashboard?.clients:'—',sub:'Current live register',icon:Users,tone:'gold'},
+    {label:'System issues',value:live?dashboard?.systemIssues:'—',sub:live&&dashboard?.systemIssues===0?'No current issues':'Connections needing attention',icon:Link2,tone:'pink'},
+  ];
 
- return <div className="commandWorkspace">
-  <aside className="commandThreads">
-   <div className="threadHead"><div><small>ORVIA COMMAND</small><b>Conversations</b></div><button onClick={newThread} title="New conversation"><MessageSquarePlus size={17}/></button></div>
-   <div className="threadSearchHint">One place to talk to ORVIA through IRIS.</div>
-   <div className="threadList">
-    {threads.map(t=><button key={t.id} className={t.id===activeThreadId?'active':''} onClick={()=>setActiveThreadId(t.id)}><span className="threadDot"/><span><b>{t.title}</b><small>{t.messages.length} messages</small></span></button>)}
-   </div>
-  </aside>
-
-  <main className="commandConversation">
-   <header className="conversationHeader">
-    <div><small>IRIS · ORVIA CONDUCTOR</small><h2>{activeThread?.title||'Command'}</h2><p>{statusLine}</p></div>
-    <div className="conversationStatus">
-      <span>Needs you <b>{live?dashboard?.approvals??0:'—'}</b></span>
-      <span>Open work <b>{live?dashboard?.openWork??0:'—'}</b></span>
-      <span>Estate <b>{live?dashboard?.estate??0:'—'}</b></span>
-      <span>System issues <b>{live?dashboard?.systemIssues??0:'—'}</b></span>
+  return <div className="ovOverview">
+    <div className="ovPageHead">
+      <div><small>ORVIA OVERSIGHT · UNIFIED OPERATING SYSTEM</small><h2>Overview</h2></div>
+      <div className={`ovLivePill ${live?'isLive':'isPending'}`}><span/>{live?'Interface live · synced with modules':'Interface live · data connection pending'}</div>
     </div>
-   </header>
 
-   <div className="quickPrompts">{quickPrompts.map(q=><button key={q} onClick={()=>sendQuestion(q)} disabled={sending}>{q}</button>)}</div>
+    <div className="ovTabs"><button className="active">Overview</button><Link href="/work">Workflows</Link><Link href="/portal/reports">Performance</Link><Link href="/systems">Connections</Link></div>
 
-   <section className="messageStream">
-    {activeThread?.messages.map(message=><article className={`chatMessage ${message.role} ${message.status==='warn'?'warn':''}`} key={message.id}>
-      <div className="chatAvatar">{message.role==='user'?'JM':'IRIS'}</div>
-      <div className="chatBody"><div className="chatMeta"><b>{message.role==='user'?'John':'IRIS'}</b>{message.status==='warn'?<TriangleAlert size={14}/>:message.role==='iris'?<CheckCircle2 size={14}/>:null}</div><p>{message.text}</p></div>
-    </article>)}
-    {sending&&<article className="chatMessage iris"><div className="chatAvatar">IRIS</div><div className="chatBody"><div className="chatMeta"><b>IRIS</b></div><p>Checking live ORVIA state…</p></div></article>}
-   </section>
+    <section className="ovHero">
+      <div className="ovHeroCopy">
+        <div className="ovHeroEyebrow"><span/> ORVIA COMMAND</div>
+        <h1>One system across every ORVIA surface.</h1>
+        <p>IRIS keeps work, evidence, brand, media and performance connected so every ORVIA surface works as one.</p>
+        <div className="ovHeroActions">
+          <button onClick={()=>document.getElementById('ov-iris')?.focus()}><Sparkles size={17}/>Create with IRIS</button>
+          <Link href="/projects">Open ORVIA Landscape <ChevronRight size={16}/></Link>
+        </div>
+      </div>
 
-   <footer className="chatComposer">
-    <textarea value={command} onChange={e=>setCommand(e.target.value)} onKeyDown={onKeyDown} placeholder="Tell IRIS what you need…" aria-label="Message IRIS" />
-    <div className="composerActions"><span>Enter to send · Shift+Enter for a new line</span><div><button className="voiceButton" type="button" onClick={()=>{setVoiceOn(v=>!v);if(voiceOn&&typeof window!=='undefined')window.speechSynthesis?.cancel();}}>{voiceOn?<Volume2 size={16}/>:<VolumeX size={16}/>}</button><button className="sendButton" onClick={()=>sendQuestion()} disabled={sending||!command.trim()}><Send size={16}/>{sending?'Working':'Send'}</button></div></div>
-   </footer>
-  </main>
- </div>;
+      <div className="ovOrbit" aria-hidden="true">
+        <div className="ovOrbitRing r1"/><div className="ovOrbitRing r2"/><div className="ovOrbitRing r3"/>
+        <div className="ovOrbitCore"><span className="orbitMark">O</span><b>ORVIA</b><small>COMMAND</small></div>
+        <div className="ovNode n1 purple"><Palette size={17}/><b>Brand</b></div>
+        <div className="ovNode n2 gold"><Video size={17}/><b>Media</b></div>
+        <div className="ovNode n3 teal"><Mic2 size={17}/><b>Voice</b></div>
+        <div className="ovNode n4 blue"><Layers3 size={17}/><b>Web & Assets</b></div>
+        <div className="ovNode n5 pink"><Send size={17}/><b>Campaigns</b></div>
+      </div>
+      <div className="ovHeroNote"><small>A UNIFIED<br/>ORVIA ECOSYSTEM</small><p>Connected modules.<br/>Consistent output.<br/>Human control.</p></div>
+    </section>
+
+    <section className="ovMetrics">
+      {metrics.map(({label,value,sub,icon:Icon,tone})=><article key={label} className={`ovMetric ${tone}`}>
+        <div className="ovMetricIcon"><Icon size={19}/></div><div><strong>{value??'—'}</strong><b>{label}</b><small>{sub}</small></div>
+      </article>)}
+    </section>
+
+    <section className="ovModules">
+      {modules.map(({href,label,desc,icon:Icon,tone})=><Link href={href} key={label} className={`ovModule ${tone}`}>
+        <div className="ovModuleIcon"><Icon size={18}/></div><div><b>{label}</b><small>{desc}</small></div><ChevronRight size={16}/>
+      </Link>)}
+    </section>
+
+    <section className="ovWorkflowPanel">
+      <div className="ovPanelHead"><div><small>IRIS · COMMAND</small><h3>Workflows & Actions</h3><p>Live work from the ORVIA queue. No synthetic work items are shown.</p></div><Link href="/work">View all work <ChevronRight size={15}/></Link></div>
+      <div className="ovBoard">
+        {([
+          ['todo','To Do'],['progress','In Progress'],['review','Awaiting Review'],['done','Done'],['blocked','Blocked']
+        ] as const).map(([key,label])=><div className={`ovColumn ${key}`} key={key}>
+          <header><b>{label}</b><span>{columns[key].length}</span></header>
+          <div className="ovCards">
+            {columns[key].length?columns[key].slice(0,4).map(item=><article key={item.id}>
+              <div className="ovCardTop"><span className="ovCardDot"/><b>{item.title}</b></div>
+              <small>{item.priority||'Normal'} · {item.status||'Open'}</small>
+            </article>):<div className="ovEmpty">No live items in this state.</div>}
+          </div>
+        </div>)}
+      </div>
+    </section>
+
+    <section className="ovBottomGrid">
+      <div className="ovIrisBox">
+        <div><small>ASK IRIS</small><h3>Command the business from here.</h3><p>Describe the outcome. IRIS handles routing and returns anything requiring human authority.</p></div>
+        <div className="ovIrisComposer">
+          <input id="ov-iris" value={command} onChange={e=>setCommand(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')askIris()}} placeholder="Tell IRIS what you need…" />
+          <button onClick={askIris} disabled={sending||!command.trim()}>{sending?'Working…':<><Send size={16}/>Send</>}</button>
+        </div>
+        {irisMessage?<div className="ovIrisReply">{irisMessage}</div>:null}
+      </div>
+      <div className="ovHealthBox">
+        <div className="ovPanelHead compact"><div><small>LIVE CONTROL</small><h3>System position</h3></div></div>
+        <div className="ovHealthRows">
+          <div><span><CheckCircle2 size={15}/>Backend deployment</span><b>Live</b></div>
+          <div><span><FileStack size={15}/>Evidence estate</span><b>{live?'Synced':'Pending'}</b></div>
+          <div><span><TriangleAlert size={15}/>Connection issues</span><b>{live?dashboard?.systemIssues??0:'—'}</b></div>
+        </div>
+      </div>
+    </section>
+  </div>;
 }
