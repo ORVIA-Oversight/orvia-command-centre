@@ -13,14 +13,15 @@ export const revalidate=0;
 async function loadWorkspace(){
  const supabase=getServerSupabase();
  const [assetState,clientRegistry]=await Promise.all([loadOrviaAssets(),loadClientRegistry()]);
- if(!supabase) return {source:'review-build',tasks:[],queue:[],assets:assetState.assets,assetSource:assetState.source,clientRegistry,readiness:[],agents:[]};
- const [tasks,queue,readiness,agents]=await Promise.all([
+ if(!supabase) return {source:'review-build',tasks:[],queue:[],verification:[],assets:assetState.assets,assetSource:assetState.source,clientRegistry,readiness:[],agents:[]};
+ const [tasks,queue,readiness,agents,verification]=await Promise.all([
   supabase.from('admin_tasks').select('id,title,status,priority,owner,due_at,approval_required,updated_at').order('updated_at',{ascending:false}).limit(60),
   supabase.from('admin_work_queue').select('id,title,status,priority,assigned_to,approval_required,source_system,updated_at').order('updated_at',{ascending:false}).limit(60),
   supabase.from('web_project_readiness_summary').select('project_code,domain,live_url,preview_url,github_repo,deployment_project,state,completion_percent,rag_status,critical_blocker_count,outstanding_dimensions').order('completion_percent',{ascending:false}),
-  supabase.from('admin_agents').select('code,display_name,purpose,active,metadata').eq('active',true).order('code',{ascending:true})
+  supabase.from('admin_agents').select('code,display_name,purpose,active,metadata').eq('active',true).order('code',{ascending:true}),
+  supabase.from('admin_verification_checks').select('id,title,status,verification_stage,next_recheck_at').eq('status','open').order('next_recheck_at',{ascending:true}).limit(100)
  ]);
- return {source:'live',tasks:tasks.data??[],queue:queue.data??[],assets:assetState.assets,assetSource:assetState.source,clientRegistry,readiness:readiness.data??[],agents:agents.data??[]};
+ return {source:'live',tasks:tasks.data??[],queue:queue.data??[],verification:verification.data??[],assets:assetState.assets,assetSource:assetState.source,clientRegistry,readiness:readiness.data??[],agents:agents.data??[]};
 }
 
 function accentClass(key:string|null){
@@ -47,6 +48,7 @@ function commercialName(code:string){
 export default async function WorkspacePage(){
  const data=await loadWorkspace();
  const currentAssets=data.assets.filter(isCurrentAsset).filter(a=>!isLegacyAsset(a));
+ const dueVerification=data.verification.filter((x:any)=>!x.next_recheck_at||new Date(x.next_recheck_at).getTime()<=Date.now());
  const approvalItems=[...data.tasks,...data.queue].filter((x:any)=>x.approval_required===true && !['completed','closed','done'].includes(String(x.status||'').toLowerCase()));
  const inProgress=[...data.tasks,...data.queue].filter((x:any)=>['active','in_progress','processing','running','assigned','open'].includes(String(x.status||'').toLowerCase()));
  const blocked=[...data.tasks,...data.queue].filter((x:any)=>['blocked','failed','needs_human','review_required'].includes(String(x.status||'').toLowerCase()));
@@ -69,7 +71,7 @@ export default async function WorkspacePage(){
   </section>
 
   <section className="workspaceBuckets" aria-label="Founder work status">
-   <article className="workspaceBucket needs"><CircleAlert size={19}/><small>NEEDS JOHN</small><strong>{approvalItems.length}</strong><span>Authority or decision required</span></article>
+   <article className="workspaceBucket needs"><CircleAlert size={19}/><small>NEEDS JOHN</small><strong>{approvalItems.length+dueVerification.length}</strong><span>{approvalItems.length} authority/decision · {dueVerification.length} VERA check{dueVerification.length===1?'':'s'} due</span></article>
    <article className="workspaceBucket review"><ShieldCheck size={19}/><small>FOR REVIEW</small><strong>{reviewCount}</strong><span>Estate or work requiring reconciliation</span></article>
    <article className="workspaceBucket progress"><Clock3 size={19}/><small>IN PROGRESS</small><strong>{inProgress.length}</strong><span>Work continuing in the system</span></article>
    <article className="workspaceBucket blocked"><CircleAlert size={19}/><small>BLOCKED</small><strong>{blocked.length}</strong><span>Cannot proceed safely yet</span></article>
