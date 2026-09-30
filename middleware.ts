@@ -29,10 +29,10 @@ export async function middleware(req: NextRequest) {
 
   const session = await verifyCommandSession(req.cookies.get(ORVIA_SESSION_COOKIE)?.value);
   if (session?.email) {
-    const response = NextResponse.next();
-    response.headers.set('x-orvia-user', session.email);
-    if (session.role) response.headers.set('x-orvia-role', session.role);
-    return response;
+    const headers = new Headers(req.headers);
+    headers.set('x-orvia-user', session.email);
+    if (session.role) headers.set('x-orvia-role', session.role);
+    return NextResponse.next({ request: { headers } });
   }
 
   const privateMode = process.env.COMMAND_PRIVATE_MODE === 'true';
@@ -46,7 +46,12 @@ export async function middleware(req: NextRequest) {
         const split = decoded.indexOf(':');
         const u = split >= 0 ? decoded.slice(0, split) : decoded;
         const p = split >= 0 ? decoded.slice(split + 1) : '';
-        if (u === username && p === password) return NextResponse.next();
+        if (u === username && p === password) {
+          const headers = new Headers(req.headers);
+          headers.set('x-orvia-user', u);
+          headers.set('x-orvia-role', 'verification');
+          return NextResponse.next({ request: { headers } });
+        }
       } catch {}
     }
   }
