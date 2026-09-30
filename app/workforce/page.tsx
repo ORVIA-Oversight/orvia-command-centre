@@ -1,16 +1,17 @@
-import { Bot, CalendarClock, CheckCircle2, CircleAlert, Network, ShieldCheck } from 'lucide-react';
+import { Bot, CalendarClock, CheckCircle2, CircleAlert, Network, ShieldCheck, Users, ArrowRightLeft } from 'lucide-react';
 import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
 import { getServerSupabase } from '@/lib/supabase-server';
 import { gatewayConfigured } from '@/lib/agent-gateway';
+import { WORKFORCE_DEPARTMENTS, departmentForAgent } from '@/lib/workforce-directory';
 
 export const dynamic='force-dynamic';
 export const revalidate=0;
 
 async function loadWorkforce(){
   const supabase=getServerSupabase();
-  if(!supabase)return {workers:[],schedules:[],jobs:[]};
-  const [workers,schedules,jobs]=await Promise.all([
+  if(!supabase)return {workers:[],schedules:[],jobs:[],allAgents:[],handoffs:[]};
+  const [workers,schedules,jobs,allAgents,handoffs]=await Promise.all([
     supabase.from('admin_agents')
       .select('code,display_name,purpose,operating_scope,risk_ceiling,can_write_low_risk,active,metadata')
       .contains('metadata',{external_worker:true})
@@ -22,9 +23,23 @@ async function loadWorkforce(){
       .select('id,selected_agent_code,status,schedule_code,created_at,completed_at')
       .not('selected_agent_code','is',null)
       .order('created_at',{ascending:false})
-      .limit(100)
+      .limit(100),
+    supabase.from('admin_agents')
+      .select('code,display_name,purpose,operating_scope,risk_ceiling,agent_type,active,metadata')
+      .eq('active',true)
+      .order('display_name',{ascending:true}),
+    supabase.from('admin_handoffs')
+      .select('id,source_kind,source_ref,target_kind,target_ref,title,status,approval_required,approval_status,created_at,completed_at')
+      .order('created_at',{ascending:false})
+      .limit(50)
   ]);
-  return {workers:workers.data??[],schedules:schedules.data??[],jobs:jobs.data??[]};
+  return {
+    workers:workers.data??[],
+    schedules:schedules.data??[],
+    jobs:jobs.data??[],
+    allAgents:allAgents.data??[],
+    handoffs:handoffs.data??[]
+  };
 }
 
 function state(active:boolean, connection?:string){
@@ -54,6 +69,32 @@ export default async function WorkforcePage(){
         <article className="metricCard tone-gold"><small>SCHEDULES PREPARED</small><strong>{data.schedules.length}</strong><span>{data.schedules.filter((s:any)=>s.active).length} currently active</span></article>
         <article className="metricCard tone-purple"><small>OPEN WORK</small><strong>{openJobs.length}</strong><span>{verification.length} awaiting verification</span></article>
         <article className="metricCard tone-orange"><small>GATEWAY</small><strong>{configured?'ON':'OFF'}</strong><span>{configured?'Production secret configured':'Human activation still required'}</span></article>
+      </section>
+
+      <section className="panel spaced">
+        <div className="panelHead"><div><span>360° WORKFORCE</span><h3>Departments, roles and delegated specialists</h3></div><Users size={18}/></div>
+        <div className="panelBody">
+          <div className="irisTeamGrid">
+            {WORKFORCE_DEPARTMENTS.map((dept)=>{
+              const members=data.allAgents.filter((a:any)=>dept.agents.includes(a.code));
+              return <article key={dept.id} className="irisAgentCard" style={{cursor:'default',borderTop:`4px solid ${dept.accent}`,alignItems:'flex-start'}}>
+                <div className="irisAgentAvatar" style={{background:dept.accent}}><Users size={20}/></div>
+                <div className="irisAgentCopy">
+                  <b>{dept.label}</b>
+                  <span>{members.length} active role{members.length===1?'':'s'}</span>
+                  <small>{dept.description}</small>
+                  <div style={{display:'grid',gap:6,marginTop:10}}>
+                    {members.map((a:any)=><div key={a.code} style={{padding:'8px 9px',border:'1px solid #e7e0d6',borderRadius:10,background:'#fff'}}>
+                      <b style={{fontSize:9}}>{a.display_name}</b>
+                      <small style={{display:'block',marginTop:2}}>{a.code} · {a.risk_ceiling} risk ceiling</small>
+                    </div>)}
+                    {!members.length?<small>Role shells prepared; activate when the corresponding specialist is registered.</small>:null}
+                  </div>
+                </div>
+              </article>;
+            })}
+          </div>
+        </div>
       </section>
 
       <section className="twoCol">
@@ -93,6 +134,13 @@ export default async function WorkforcePage(){
             <div><CircleAlert size={16}/><p><b>One end-to-end acceptance task</b><small>HIVE → worker → SharePoint/HIVE receipt → VERA → IRIS. Then activate schedules individually.</small></p></div>
           </div>
         </article>
+      </section>
+
+      <section className="panel spaced">
+        <div className="panelHead"><div><span>AGENT HANDOFFS</span><h3>Who passed work to whom</h3></div><ArrowRightLeft size={18}/></div>
+        <div className="panelBody">
+          {data.handoffs.length?<div className="systemsGrid">{data.handoffs.slice(0,20).map((h:any)=><div className="systemRow" key={h.id}><div><b>{h.source_ref} → {h.target_ref}</b><small>{h.title}<br/>{new Date(h.created_at).toLocaleString('en-GB')}</small></div><span className={'statusBadge '+(h.status==='completed'?'status-teal':'status-gold')}>{String(h.status).replaceAll('_',' ')}</span></div>)}</div>:<div className="workspaceEmpty"><b>No agent-to-agent handoffs yet</b><span>When one role delegates, challenges or returns work to another, the chain will appear here.</span></div>}
+        </div>
       </section>
 
       <section className="panel spaced">
