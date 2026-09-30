@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   ArrowRight, Bot, CheckCircle2, ChevronRight, FileText, Headphones,
   Mic, MicOff, Send, ShieldCheck, Sparkles, Users, Volume2, VolumeX,
-  Workflow, Brain, HeartPulse, UserRoundCog, MessageSquareText, BadgeCheck
+  Workflow, Brain, HeartPulse, UserRoundCog, MessageSquareText, BadgeCheck, Network
 } from 'lucide-react';
 
 type DashboardState = {
@@ -27,6 +27,19 @@ type IrisReply = {
   status?: string;
   answer?: string;
   reason?: string;
+};
+
+type ExecutiveBrief = {
+  live?: boolean;
+  hierarchy?: { managingDirector:string; deputy:string; specialists:number; externalWorkers:number };
+  layers?: Array<{code:string;label:string;href:string;status:string;ready:boolean;updatedAt?:string|null}>;
+  today?: { scheduledTasks:any[]; openWork:number; approvals:number; mailNeedsJohn:number; mailReplyReady:number; highRiskMail:number };
+  workforce?: {
+    gateway:string;
+    specialistTeams:Array<{code:string;name:string;purpose:string;riskCeiling:string}>;
+    externalWorkers:Array<{code:string;name:string;connection:string;riskCeiling:string}>;
+    schedules:any[];
+  };
 };
 
 const specialists = [
@@ -54,12 +67,18 @@ export function IrisCommandHome() {
   const [listening, setListening] = useState(false);
   const [voiceReplies, setVoiceReplies] = useState(true);
   const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [executive, setExecutive] = useState<ExecutiveBrief | null>(null);
+  const [targetAgent, setTargetAgent] = useState<string>('IRIS');
 
   useEffect(() => {
     fetch('/api/dashboard', { cache: 'no-store' })
       .then(r => r.json())
       .then(setDashboard)
       .catch(() => setDashboard({ source: 'unavailable' }));
+    fetch('/api/iris/executive', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(setExecutive)
+      .catch(() => setExecutive({ live: false }));
   }, []);
 
   useEffect(() => {
@@ -140,7 +159,8 @@ export function IrisCommandHome() {
             lens: 'Command',
             experience: 'single-conversation',
             surface: 'IRIS'
-          }
+          },
+          targetAgent
         })
       });
 
@@ -157,6 +177,7 @@ export function IrisCommandHome() {
       setCommand('');
       speak(message);
       fetch('/api/dashboard', { cache: 'no-store' }).then(x => x.json()).then(setDashboard).catch(() => {});
+      fetch('/api/iris/executive', { cache: 'no-store' }).then(x => x.json()).then(setExecutive).catch(() => {});
     } catch {
       setReply('IRIS is not connected right now. Your request has not been sent anywhere else.');
     } finally {
@@ -201,8 +222,8 @@ export function IrisCommandHome() {
             <span className="irisPulse p3"/>
           </div>
           <div className="irisIdentity">
-            <div className="irisNameRow"><h2>IRIS</h2><span>AI Operations Assistant</span></div>
-            <p>Your single point of contact. Tell me what you need and I will bring in the right specialist, keep the work moving and return anything that needs your decision.</p>
+            <div className="irisNameRow"><h2>IRIS</h2><span>Deputy · AI Operations</span></div>
+            <p>You are Managing Director. IRIS is your deputy: she can allocate the work automatically, or you can speak directly to a department or worker and IRIS keeps the overall picture coordinated.</p>
             <div className="irisTrustLine"><ShieldCheck size={15}/><span>Human authority retained for safeguarding, clinical and consequential decisions.</span></div>
           </div>
         </div>
@@ -236,6 +257,14 @@ export function IrisCommandHome() {
               placeholder="Message IRIS…"
               rows={2}
             />
+            <div style={{padding:'0 10px 8px',display:'flex',gap:7,alignItems:'center',flexWrap:'wrap'}}>
+              <span style={{fontSize:8,fontWeight:900,letterSpacing:'.08em',color:'#68798a'}}>ASSIGN TO</span>
+              <select value={targetAgent} onChange={e=>setTargetAgent(e.target.value)} style={{border:'1px solid #ddd6cc',borderRadius:8,padding:'7px 9px',fontSize:9,background:'#faf8f4',color:'#0b2450'}}>
+                <option value="IRIS">IRIS — allocate for me</option>
+                {(executive?.workforce?.specialistTeams||[]).map(x=><option key={x.code} value={x.code}>{x.name}</option>)}
+                {(executive?.workforce?.externalWorkers||[]).map(x=><option key={x.code} value={x.code}>{x.name}</option>)}
+              </select>
+            </div>
             <div className="irisComposerBar">
               <div className="irisComposerLeft">
                 <button onClick={startListening} className={listening ? 'active' : ''} title="Speak to IRIS">
@@ -261,8 +290,14 @@ export function IrisCommandHome() {
 
       <section className="irisSection">
         <div className="irisSectionHead">
-          <div><small>YOUR AI TEAM</small><h3>IRIS brings in the right specialist.</h3></div>
-          <Link href="/workforce">Open AI workforce <ChevronRight size={16}/></Link>
+          <div><small>YOUR WORKFORCE</small><h3>You lead. IRIS coordinates. Teams execute.</h3></div>
+          <Link href="/workforce">Open workforce <ChevronRight size={16}/></Link>
+        </div>
+        <div className="irisQuickActions" style={{marginBottom:12}}>
+          <button onClick={()=>askIris('Give me my full managing director brief: diary, mail, work, sales, risks and approvals.')}>MD daily brief</button>
+          <button onClick={()=>{setTargetAgent('SALES-01');setCommand('Review sales, prospects, follow-ups and next conversations.');}}>Sales team</button>
+          <button onClick={()=>{setTargetAgent('FINANCE-01');setCommand('Review finance, cash, invoices and commercial priorities.');}}>Finance team</button>
+          <button onClick={()=>{setTargetAgent('SAFEGUARD-01');setCommand('Review safeguarding work and surface only matters needing human attention.');}}>Safeguarding</button>
         </div>
         <div className="irisTeamGrid">
           {specialists.map(({ name, role, note, icon: Icon, seed }) => (
@@ -276,6 +311,14 @@ export function IrisCommandHome() {
       </section>
 
       <section className="irisLowerGrid">
+        <article className="irisStatusCard">
+          <div className="irisSectionHead compact"><div><small>OPERATING LAYERS</small><h3>Connected into Command</h3></div><Network size={18}/></div>
+          <div className="irisStatusRows">
+            {(executive?.layers||[]).slice(0,7).map(layer=><div key={layer.code}><span>{layer.label}</span><b style={{fontSize:9}}>{layer.ready?'LIVE':String(layer.status).toUpperCase()}</b></div>)}
+          </div>
+          <Link href="/systems">Open systems & access <ChevronRight size={15}/></Link>
+        </article>
+
         <article className="irisStatusCard">
           <div className="irisSectionHead compact"><div><small>LIVE POSITION</small><h3>Business at a glance</h3></div><Workflow size={18}/></div>
           <div className="irisStatusRows">
