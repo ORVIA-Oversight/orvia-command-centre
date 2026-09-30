@@ -18,25 +18,32 @@ export async function POST(req:NextRequest){
   catch{ return NextResponse.json({status:'INCOMPLETE',reason:'I could not read that request. Please try again.'},{status:400}); }
 
   const question=clean(body?.question);
+  const requestedAgent=clean(body?.targetAgent||'IRIS').toUpperCase();
   if(!question) return NextResponse.json({status:'INCOMPLETE',reason:'Tell me what you need help with.'},{status:400});
 
   const supabase=getServerSupabase();
   if(!supabase) return NextResponse.json({status:'INCOMPLETE',reason:'I cannot reach the live ORVIA data right now, so I cannot answer reliably.'},{status:503});
 
   try{
-    const [assetsResult,tasksResult,queueResult,integrationsResult,clientsResult,accessResult]=await Promise.all([
+    const [assetsResult,tasksResult,queueResult,integrationsResult,clientsResult,accessResult,agentsResult]=await Promise.all([
       supabase.from('orvia_asset_registry').select('asset_key,display_name,canonical_domain,canonical_url,estate_disposition,verification_status,deployment_project_name,desired_deployment_project_name,notes').order('display_name',{ascending:true}),
       supabase.from('admin_tasks').select('id,title,status,priority,approval_required,owner,due_at,updated_at').order('updated_at',{ascending:false}).limit(80),
       supabase.from('admin_work_queue').select('id,title,status,priority,approval_required,assigned_to,source_system,source_reference,created_at,updated_at').order('created_at',{ascending:false}).limit(80),
       supabase.from('admin_integrations').select('code,name,category,status,updated_at').order('updated_at',{ascending:false}).limit(80),
       supabase.from('admin_organisations').select('id,metadata').limit(500),
-      supabase.from('admin_access_accounts').select('service_name,migration_status,legacy_healthcare,mfa_state,vault_reference,current_state,action_required,current_login_email,target_orvia_email').order('service_name',{ascending:true})
+      supabase.from('admin_access_accounts').select('service_name,migration_status,legacy_healthcare,mfa_state,vault_reference,current_state,action_required,current_login_email,target_orvia_email').order('service_name',{ascending:true}),
+      supabase.from('admin_agents').select('code,display_name,agent_type,risk_ceiling,requires_human_approval_above,active,metadata').eq('active',true)
     ]);
 
     const assets=assetsResult.data??[];
     const tasks=tasksResult.data??[];
     const queue=queueResult.data??[];
     const integrations=integrationsResult.data??[];
+    const agents=agentsResult.data??[];
+    const targetAgent=agents.find((x:any)=>String(x.code).toUpperCase()===requestedAgent) || agents.find((x:any)=>x.code==='IRIS');
+    const targetCode=targetAgent?.code||'IRIS';
+    const targetName=targetAgent?.display_name||'IRIS';
+    const isExternalWorker=Boolean(targetAgent?.metadata?.external_worker);
     const assetKeys=resolveAssetKeys(question,assets);
     const clientRows=clientsResult.data??[];
     const clientCount=clientRows.filter((x:any)=>!(x.metadata&&x.metadata.internal_orvia===true)).length;
@@ -109,35 +116,57 @@ export async function POST(req:NextRequest){
     const wc=workClass(question);
     const detail=clean(`[AUTHORITY=${authority}] [CLASS=${wc}] [ASSETS=${assetLabel}] ${question}`);
 
-    const insert=await supabase.from('admin_work_queue').insert({
-      work_type:'command_instruction',
-      title:question.slice(0,180),
-      detail,
-      status:approvalRequired?'review_required':'open',
-      priority:priorityFor(question),
-      assigned_to:'IRIS',
-      approval_required:approvalRequired,
-      source_system:'COMMAND',
-      source_reference:assetKeys[0]||'command.orvia.org.uk'
-    }).select('id,status,priority,approval_required').single();
-
-    if(insert.error||!insert.data){
-      return NextResponse.json({status:'INCOMPLETE',reason:'I could not add that to the controlled work queue. Please try again.'},{status:500});
+    let workId:string|null=null;
+    if(isExternalWorker){
+      const insert=await supabase.from('admin_brain_jobs').insert({
+        user_request:question,
+        interpreted_intent:question.slice(0,500),
+        selected_agent_code:targetCode,
+        status:approvalRequired?'review_required':'queued',
+        risk_level:wc==='HIGH-CONSEQUENCE'?'high':wc==='MATERIAL'?'medium':'low',
+        approval_required:approvalRequired,
+        approval_status:approvalRequired?'pending':'not_required',
+        input_context:{source:'COMMAND',requested_by:'managing_director',asset_keys:assetKeys},
+        requested_outputs:[],
+        permitted_sources:['HIVE','SHAREPOINT','COMMAND'],
+        verification_required:true
+      }).select('id,status').single();
+      if(insert.error||!insert.data){
+        return NextResponse.json({status:'INCOMPLETE',reason:'I could not route that to the selected worker. Please try again.'},{status:500});
+      }
+      workId=insert.data.id;
+    }else{
+      const insert=await supabase.from('admin_work_queue').insert({
+        work_type:'command_instruction',
+        title:question.slice(0,180),
+        detail,
+        status:approvalRequired?'review_required':'open',
+        priority:priorityFor(question),
+        assigned_to:targetCode,
+        approval_required:approvalRequired,
+        source_system:'COMMAND',
+        source_reference:assetKeys[0]||'command.orvia.org.uk'
+      }).select('id,status,priority,approval_required').single();
+      if(insert.error||!insert.data){
+        return NextResponse.json({status:'INCOMPLETE',reason:'I could not add that to the controlled work queue. Please try again.'},{status:500});
+      }
+      workId=insert.data.id;
     }
 
     const message=authority==='A4'
-      ? 'I have recorded the request, but this remains human-only and will not be executed automatically.'
+      ? `I have recorded this for ${targetName}, but it remains human-only and will not be executed automatically.`
       : authority==='A3'
-      ? 'I have prepared the work and held it for your approval before any consequential action.'
+      ? `I have assigned this to ${targetName} and held the consequential step for your approval.`
       : authority==='A2'
-      ? 'I have routed this as a controlled, reversible production change. It must be verified and rolled back if verification fails.'
-      : 'I have routed the work inside delegated authority.';
+      ? `I have assigned this to ${targetName} as a controlled, reversible change with verification required.`
+      : `I have assigned this to ${targetName}. IRIS will keep it in the overall work picture.`;
 
     return NextResponse.json({
       status:'COMPLETE',
       model:'IRIS',
       answer:message,
-      workId:insert.data.id,
+      workId,
+      assignedTo:targetCode,
       authority,
       workClass:wc,
       resolvedAssets:assetKeys,

@@ -2,7 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   Activity, BarChart3, BookOpen, Bot, BriefcaseBusiness, FolderKanban,
-  Globe2, Mail, Settings, Share2, Sparkles, Users, Video, Inbox, Workflow
+  Globe2, Mail, Settings, Share2, Sparkles, Users, Video, Inbox, Workflow,
+  Building2, Megaphone, ShieldCheck, Headphones, UserRoundCog
 } from 'lucide-react';
 
 const primary = [
@@ -11,6 +12,14 @@ const primary = [
   { href:'/workforce', label:'AI Team', icon:Bot },
   { href:'/library', label:'Knowledge', icon:BookOpen },
   { href:'/systems', label:'Automations', icon:Workflow },
+];
+
+const departments = [
+  { href:'/workforce#admin-people', label:'Admin & People', icon:UserRoundCog },
+  { href:'/workforce#growth', label:'Sales & Growth', icon:Megaphone },
+  { href:'/workforce#intelligence', label:'Intelligence', icon:ShieldCheck },
+  { href:'/workforce#operations', label:'Operations', icon:Headphones },
+  { href:'/workforce#external', label:'AI Workers', icon:Building2 },
 ];
 
 const business = [
@@ -42,6 +51,8 @@ export function Sidebar(){
     <nav className="ovSidebarNav">
       <small className="ovNavLabel">COMMAND</small>
       <NavGroup items={primary}/>
+      <small className="ovNavLabel">DEPARTMENTS</small>
+      <NavGroup items={departments}/>
       <small className="ovNavLabel">BUSINESS</small>
       <NavGroup items={business}/>
     </nav>
