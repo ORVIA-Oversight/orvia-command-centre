@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './light-overrides.css';
 import './production.css';
+import './iris-command.css';
 import { PwaRegister } from '@/components/PwaRegister';
 
 export const metadata: Metadata = {
