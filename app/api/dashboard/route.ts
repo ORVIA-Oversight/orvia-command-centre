@@ -12,17 +12,20 @@ export async function GET(){
    estate:null,
    estateReview:null,
    systemIssues:null,
+   verificationDue:null,
+   verificationFailed:null,
    clients:null,
    recentWork:[],
    warning:'Live Supabase environment variables are not configured.'
  });
 
- const [tasks,queue,assets,integrations,clients]=await Promise.all([
+ const [tasks,queue,assets,integrations,clients,verification]=await Promise.all([
   supabase.from('admin_tasks').select('id,title,status,priority,approval_required,updated_at').order('updated_at',{ascending:false}).limit(100),
   supabase.from('admin_work_queue').select('id,title,status,priority,approval_required,assigned_to,source_system,source_reference,created_at,updated_at').order('created_at',{ascending:false}).limit(100),
   supabase.from('orvia_asset_registry').select('asset_key,display_name,estate_disposition,verification_status,canonical_domain,updated_at').order('display_name',{ascending:true}),
   supabase.from('admin_integrations').select('code,name,category,status,updated_at').order('updated_at',{ascending:false}).limit(100),
-  supabase.from('admin_organisations').select('id,metadata').limit(500)
+  supabase.from('admin_organisations').select('id,metadata').limit(500),
+  supabase.from('admin_verification_checks').select('id,status,next_recheck_at').limit(250)
  ]);
 
  const taskRows=tasks.data??[];
@@ -31,6 +34,9 @@ export async function GET(){
  const integrationRows=integrations.data??[];
  const clientRows=clients.data??[];
  const clientCount=clientRows.filter((x:any)=>!(x.metadata&&x.metadata.internal_orvia===true)).length;
+ const verificationRows=verification.data??[];
+ const verificationDue=verificationRows.filter((x:any)=>x.status==='open'&&(!x.next_recheck_at||new Date(x.next_recheck_at).getTime()<=Date.now())).length;
+ const verificationFailed=verificationRows.filter((x:any)=>x.status==='failed').length;
 
  const active=(x:any)=>!['completed','closed','done','cancelled'].includes(String(x.status||'').toLowerCase());
  const activeTasks=taskRows.filter(active);
@@ -47,11 +53,13 @@ export async function GET(){
    estate:currentAssets.length,
    estateReview:estateReview.length,
    systemIssues:systemIssues.length,
+   verificationDue,
+   verificationFailed,
    clients:clientCount,
    recentWork:activeQueue.slice(0,6).map((x:any)=>({
      id:x.id,title:x.title,status:x.status,priority:x.priority,approval_required:x.approval_required,
      source_reference:x.source_reference,created_at:x.created_at
    })),
-   errors:[tasks.error?.message,queue.error?.message,assets.error?.message,integrations.error?.message,clients.error?.message].filter(Boolean)
+   errors:[tasks.error?.message,queue.error?.message,assets.error?.message,integrations.error?.message,clients.error?.message,verification.error?.message].filter(Boolean)
  });
 }
