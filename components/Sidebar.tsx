@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  Activity, BarChart3, BookOpen, Bot, BriefcaseBusiness, FolderKanban,
+  Activity, BadgeCheck, BarChart3, BookOpen, Bot, BriefcaseBusiness, FolderKanban,
   Globe2, Mail, Settings, Share2, Sparkles, Users, Video, Inbox, Workflow
 } from 'lucide-react';
 
@@ -10,6 +10,7 @@ const primary = [
   { href:'/work', label:'Inbox & Tasks', icon:Inbox },
   { href:'/workforce', label:'AI Team', icon:Bot },
   { href:'/library', label:'Knowledge', icon:BookOpen },
+  { href:'/assurance', label:'Assurance', icon:BadgeCheck },
   { href:'/systems', label:'Automations', icon:Workflow },
 ];
 
