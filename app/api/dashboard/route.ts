@@ -50,7 +50,7 @@ export async function GET(){
    clients:clientCount,
    recentWork:activeQueue.slice(0,6).map((x:any)=>({
      id:x.id,title:x.title,status:x.status,priority:x.priority,approval_required:x.approval_required,
-     source_reference:x.source_reference,created_at:x.created_at
+     source_system:x.source_system,assigned_to:x.assigned_to,source_reference:x.source_reference,created_at:x.created_at
    })),
    errors:[tasks.error?.message,queue.error?.message,assets.error?.message,integrations.error?.message,clients.error?.message].filter(Boolean)
  });
