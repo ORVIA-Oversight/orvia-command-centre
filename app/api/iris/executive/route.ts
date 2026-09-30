@@ -18,14 +18,15 @@ export async function GET(){
   const dayEnd=new Date(now); dayEnd.setHours(23,59,59,999);
 
   try{
-    const [integrations,agents,schedules,tasks,work,mailAccounts,mailItems]=await Promise.all([
+    const [integrations,agents,schedules,tasks,work,mailAccounts,mailItems,sharePointAssets]=await Promise.all([
       supabase.from('admin_integrations').select('code,name,category,status,updated_at'),
       supabase.from('admin_agents').select('code,display_name,agent_type,purpose,risk_ceiling,active,metadata').eq('active',true),
       supabase.from('admin_worker_schedules').select('schedule_code,worker_code,title,active,risk_level,approval_required,verification_required,local_time,timezone'),
       supabase.from('admin_tasks').select('id,title,status,priority,owner,due_at,approval_required').gte('due_at',dayStart.toISOString()).lte('due_at',dayEnd.toISOString()).order('due_at',{ascending:true}),
       supabase.from('admin_work_queue').select('id,title,status,priority,assigned_to,approval_required,created_at').order('created_at',{ascending:false}).limit(100),
       supabase.from('command_mail_accounts').select('id,address,provider,status,business_area,last_sync_at'),
-      supabase.from('command_mail_items').select('id,state,risk_level,assigned_agent,priority,deadline_at').order('received_at',{ascending:false}).limit(500)
+      supabase.from('command_mail_items').select('id,state,risk_level,assigned_agent,priority,deadline_at').order('received_at',{ascending:false}).limit(500),
+      supabase.from('admin_media_assets').select('id,file_name,asset_type,business_area_code,sharepoint_item_id,sharepoint_drive_id,source_url,created_at').not('sharepoint_item_id','is',null).order('created_at',{ascending:false}).limit(8)
     ]);
 
     const integrationRows=integrations.data??[];
@@ -65,6 +66,7 @@ export async function GET(){
         mailReplyReady:mailRows.filter((x:any)=>x.state==='reply_ready').length,
         highRiskMail:mailRows.filter((x:any)=>x.risk_level==='red').length
       },
+      recentSharePoint:sharePointAssets.data??[],
       workforce:{
         gateway:gatewayConfigured()?'enabled':'human activation required',
         specialistTeams:specialists.map((x:any)=>({code:x.code,name:x.display_name,purpose:x.purpose,riskCeiling:x.risk_ceiling})),
