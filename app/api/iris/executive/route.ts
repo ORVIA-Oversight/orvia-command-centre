@@ -49,7 +49,7 @@ export async function GET(){
       hierarchy:{managingDirector:'John',deputy:'IRIS',specialists:specialists.length,externalWorkers:externalWorkers.length},
       layers:[
         layer('MONDAY','Monday.com','/work'),
-        layer('BUZZ','Buzz collaboration runtime','/workforce'),
+        layer('DEERFLOW','DeerFlow Work Floor','/workforce'),
         layer('M365','Microsoft 365 / SharePoint','/systems'),
         {code:'COMMAND_MAIL',label:'Command Mail',href:'/communications',status:(mailAccounts.data??[]).length?'accounts connected':'needs mailbox authorisation',ready:(mailAccounts.data??[]).length>0,updatedAt:(mailAccounts.data??[])[0]?.last_sync_at??null},
         layer('STRIPE','Finance / Stripe','/systems'),
