@@ -47,7 +47,7 @@ export const WORKFORCE_DEPARTMENTS:WorkforceDepartment[]=[
     label:'External AI Workers',
     description:'Provider workers used by IRIS for controlled delegated execution.',
     accent:'#7B8794',
-    agents:['M365-WORKER','CHATGPT-WORKER','CLAUDE-WORKER','DOLA-WORKER','SINTRA-WORKER','VIKTOR-WORKER','MEDIA-WORKER']
+    agents:['M365-WORKER','CHATGPT-WORKER','CLAUDE-WORKER','DOLA-WORKER','SINTRA-WORKER','VIKTOR-WORKER','MEDIA-WORKER','DEERFLOW-WORKFLOOR']
   }
 ];
 
