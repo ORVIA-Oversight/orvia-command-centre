@@ -1,10 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Activity, BarChart3, BookOpen, BriefcaseBusiness, FolderKanban, Globe2, Home, Layers3, Settings, Share2, Sparkles, Users, Video } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, BriefcaseBusiness, FolderKanban, Globe2, Home, Layers3, Mail, Settings, Share2, Sparkles, Users, Video } from 'lucide-react';
 
 const nav=[
   {href:'/',label:'Overview',icon:Home},
   {href:'/',label:'IRIS',icon:Sparkles},
+  {href:'/communications',label:'Communications',icon:Mail},
   {href:'/projects',label:'ORVIA Landscape',icon:Globe2},
   {href:'/social',label:'Socials',icon:Share2},
   {href:'/production',label:'Media',icon:Video},
