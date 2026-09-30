@@ -59,6 +59,7 @@ type DashboardData = {
 };
 
 const states = [
+  { key: 'needs_review', label: 'Triage', icon: Inbox },
   { key: 'needs_john', label: 'Needs me', icon: UserRoundCheck },
   { key: 'reply_ready', label: 'Replies ready', icon: MessageSquareReply },
   { key: 'waiting', label: 'Waiting', icon: Clock3 },
@@ -77,6 +78,8 @@ export function CommunicationsDashboard() {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<MailItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
 
   async function load() {
     setLoading(true);
@@ -89,6 +92,24 @@ export function CommunicationsDashboard() {
   }
 
   useEffect(() => { load(); }, []);
+
+  async function syncMail() {
+    setSyncing(true);
+    setSyncMessage('');
+    try {
+      const response = await fetch('/api/communications/sync', { method: 'POST' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || 'Sync failed');
+      const synced = Array.isArray(payload?.synced) ? payload.synced : [];
+      const total = synced.reduce((sum: number, row: any) => sum + Number(row.imported || 0), 0);
+      setSyncMessage(`Sync complete · ${total} message records checked`);
+      await load();
+    } catch (error) {
+      setSyncMessage(error instanceof Error ? error.message : 'Sync failed');
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   const visible = useMemo(() => {
     const items = data?.items ?? [];
@@ -147,8 +168,14 @@ export function CommunicationsDashboard() {
           <span className={data?.providerReadiness.encryption ? 'ok' : 'pending'}>Token vault</span>
           <span className={data?.providerReadiness.ai ? 'ok' : 'pending'}>AI drafting</span>
         </div>
-        <button onClick={load} disabled={loading}><RefreshCw size={14}/>{loading ? 'Refreshing…' : 'Refresh'}</button>
+        <div className="mailControlActions">
+          {data?.providerReadiness.microsoft && <a href="/api/communications/connect/microsoft">+ Microsoft</a>}
+          {data?.providerReadiness.google && <a href="/api/communications/connect/google">+ Google</a>}
+          <button onClick={syncMail} disabled={syncing || !data?.accounts?.length}><Mail size={14}/>{syncing ? 'Syncing…' : 'Sync mail'}</button>
+          <button onClick={load} disabled={loading}><RefreshCw size={14}/>{loading ? 'Refreshing…' : 'Refresh'}</button>
+        </div>
       </section>
+      {syncMessage ? <div className="mailSyncMessage">{syncMessage}</div> : null}
 
       <section className="mailWorkspace">
         <aside className="mailRail">
@@ -175,7 +202,7 @@ export function CommunicationsDashboard() {
 
           <div className="mailAccounts">
             {(data?.accounts?.length ?? 0) === 0 ? (
-              <div className="mailEmptyAccount"><Mail size={17}/><span>No live mailbox connections yet. The control layer and database are ready; provider OAuth credentials are the remaining connection step.</span></div>
+              <div className="mailEmptyAccount"><Mail size={17}/><span>No live mailbox connections yet. When Microsoft or Google readiness turns green, use the connect buttons above to add each current, personal and legacy mailbox.</span></div>
             ) : data!.accounts.map((account) => (
               <span key={account.id} className={`mailAccount ${account.status}`}>
                 {account.address}<em>{account.account_type}</em>
