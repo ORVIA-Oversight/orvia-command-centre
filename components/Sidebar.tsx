@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Activity, BarChart3, BookOpen, BriefcaseBusiness, FolderKanban, Globe2, Home, Layers3, Mail, Settings, Share2, Sparkles, Users, Video } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, Bot, BriefcaseBusiness, FolderKanban, Globe2, Home, Layers3, Mail, Settings, Share2, Sparkles, Users, Video } from 'lucide-react';
 
 const nav=[
   {href:'/',label:'Overview',icon:Home},
@@ -13,6 +13,7 @@ const nav=[
   {href:'/work',label:'Work',icon:FolderKanban},
   {href:'/library',label:'Evidence & Library',icon:BookOpen},
   {href:'/systems',label:'Integrations',icon:Activity},
+  {href:'/workforce',label:'AI Workforce',icon:Bot},
   {href:'/portal/reports',label:'Reports',icon:BarChart3},
   {href:'/portal',label:'Workspace',icon:BriefcaseBusiness},
   {href:'/systems',label:'Settings',icon:Settings},
