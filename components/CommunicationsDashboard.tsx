@@ -47,6 +47,15 @@ type MailItem = {
   deadline_at?: string | null;
 };
 
+type MailDraft = {
+  id: string;
+  option_label: string;
+  tone?: string | null;
+  subject?: string | null;
+  body: string;
+  recommended?: boolean;
+};
+
 type DashboardData = {
   live: boolean;
   providerReadiness: { microsoft: boolean; google: boolean; encryption: boolean; ai: boolean };
@@ -80,6 +89,13 @@ export function CommunicationsDashboard() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const [drafts, setDrafts] = useState<MailDraft[]>([]);
+  const [selectedDraft, setSelectedDraft] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [actionMessage, setActionMessage] = useState('');
+  const [writingOwn, setWritingOwn] = useState(false);
+  const [customBody, setCustomBody] = useState('');
 
   async function load() {
     setLoading(true);
@@ -127,6 +143,78 @@ export function CommunicationsDashboard() {
       setSelected(visible[0] ?? null);
     }
   }, [visible, selected]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function prepareDrafts() {
+      setDrafts([]);
+      setSelectedDraft(null);
+      setActionMessage('');
+      setWritingOwn(false);
+      setCustomBody('');
+      if (!selected || !['needs_john', 'reply_ready'].includes(selected.state)) return;
+      setDrafting(true);
+      try {
+        let response = await fetch(`/api/communications/items/${selected.id}/drafts`, { cache: 'no-store' });
+        let payload = await response.json();
+        if (!response.ok) throw new Error(payload?.error || 'Could not load reply drafts');
+        let nextDrafts = Array.isArray(payload?.drafts) ? payload.drafts : [];
+        if (nextDrafts.length < 3) {
+          response = await fetch(`/api/communications/items/${selected.id}/drafts`, { method: 'POST' });
+          payload = await response.json();
+          if (!response.ok) throw new Error(payload?.error || 'Could not prepare reply drafts');
+          nextDrafts = Array.isArray(payload?.drafts) ? payload.drafts : [];
+        }
+        if (!cancelled) {
+          setDrafts(nextDrafts);
+          setSelectedDraft(nextDrafts.find((d: MailDraft) => d.recommended)?.id || nextDrafts[0]?.id || null);
+        }
+      } catch (error) {
+        if (!cancelled) setActionMessage(error instanceof Error ? error.message : 'Could not prepare replies');
+      } finally {
+        if (!cancelled) setDrafting(false);
+      }
+    }
+    prepareDrafts();
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.state]);
+
+  async function sendReply() {
+    if (!selected) return;
+    const chosen = drafts.find((draft) => draft.id === selectedDraft);
+    const body = writingOwn ? customBody : chosen?.body || '';
+    if (!body.trim()) {
+      setActionMessage('Choose a reply or write your own first.');
+      return;
+    }
+
+    let confirmHuman = false;
+    if (selected.risk_level === 'red') {
+      confirmHuman = window.confirm('This is high-consequence correspondence. Confirm that you have reviewed the reply and want to send it from the connected mailbox.');
+      if (!confirmHuman) return;
+    }
+
+    setSending(true);
+    setActionMessage('');
+    try {
+      const response = await fetch(`/api/communications/items/${selected.id}/send`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(writingOwn
+          ? { body, subject: selected.subject ? `Re: ${selected.subject}` : 'Re: Your email', confirm_human: confirmHuman }
+          : { draft_id: selectedDraft, confirm_human: confirmHuman }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || 'Reply could not be sent');
+      setActionMessage('Reply sent · moved to Waiting');
+      await load();
+      setActive('waiting');
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : 'Reply could not be sent');
+    } finally {
+      setSending(false);
+    }
+  }
 
   const counts = data?.counts ?? { needsJohn: 0, replyReady: 0, waiting: 0, automated: 0 };
   const metric = [
@@ -253,15 +341,37 @@ export function CommunicationsDashboard() {
                 <b>{selected.assigned_agent || 'IRIS triage'}</b>
                 <p>{selected.business_area || 'Unclassified'} · {selected.priority} priority</p>
               </div>
-              <div className="replyCards">
-                <button><span>A</span><div><b>Recommended reply</b><small>Prepared in John Voice</small></div></button>
-                <button><span>B</span><div><b>Alternative tone</b><small>Warmer / more collaborative</small></div></button>
-                <button><span>C</span><div><b>Alternative action</b><small>Commercial / firmer route</small></div></button>
-              </div>
-              <div className="mailDetailActions">
-                <button className="primary">Open decision</button>
-                <button>Write my own</button>
-              </div>
+              {['needs_john', 'reply_ready'].includes(selected.state) ? (
+                <>
+                  <div className="replyCards">
+                    {drafting ? <div className="mailDrafting"><Sparkles size={16}/>Preparing three John Voice options…</div> : null}
+                    {drafts.map((draft) => (
+                      <button key={draft.id} className={selectedDraft === draft.id && !writingOwn ? 'chosen' : ''} onClick={() => { setSelectedDraft(draft.id); setWritingOwn(false); }}>
+                        <span>{draft.option_label}</span>
+                        <div>
+                          <b>{draft.recommended ? 'Recommended · ' : ''}{draft.tone || 'John Voice'}</b>
+                          <small>{draft.body.slice(0, 150)}{draft.body.length > 150 ? '…' : ''}</small>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  {writingOwn ? (
+                    <textarea className="mailOwnReply" value={customBody} onChange={(e) => setCustomBody(e.target.value)} placeholder="Write your own reply here…" rows={8}/>
+                  ) : selectedDraft ? (
+                    <div className="mailDraftPreview">
+                      <small>SELECTED REPLY</small>
+                      <p>{drafts.find((draft) => draft.id === selectedDraft)?.body}</p>
+                    </div>
+                  ) : null}
+                  {actionMessage ? <div className="mailActionMessage">{actionMessage}</div> : null}
+                  <div className="mailDetailActions">
+                    <button className="primary" onClick={sendReply} disabled={sending || drafting}>{sending ? 'Sending…' : selected.risk_level === 'red' ? 'Review & send' : 'Send selected'}</button>
+                    <button onClick={() => setWritingOwn((value) => !value)}>{writingOwn ? 'Use prepared reply' : 'Write my own'}</button>
+                  </div>
+                </>
+              ) : (
+                <div className="mailDecision"><small>STATUS</small><p>This item is not awaiting a reply. Use its queue state to track or review it.</p></div>
+              )}
             </>
           )}
         </aside>
