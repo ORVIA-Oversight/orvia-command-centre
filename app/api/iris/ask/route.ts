@@ -24,13 +24,14 @@ export async function POST(req:NextRequest){
   if(!supabase) return NextResponse.json({status:'INCOMPLETE',reason:'I cannot reach the live ORVIA data right now, so I cannot answer reliably.'},{status:503});
 
   try{
-    const [assetsResult,tasksResult,queueResult,integrationsResult,clientsResult,accessResult]=await Promise.all([
+    const [assetsResult,tasksResult,queueResult,integrationsResult,clientsResult,accessResult,verificationResult]=await Promise.all([
       supabase.from('orvia_asset_registry').select('asset_key,display_name,canonical_domain,canonical_url,estate_disposition,verification_status,deployment_project_name,desired_deployment_project_name,notes').order('display_name',{ascending:true}),
       supabase.from('admin_tasks').select('id,title,status,priority,approval_required,owner,due_at,updated_at').order('updated_at',{ascending:false}).limit(80),
       supabase.from('admin_work_queue').select('id,title,status,priority,approval_required,assigned_to,source_system,source_reference,created_at,updated_at').order('created_at',{ascending:false}).limit(80),
       supabase.from('admin_integrations').select('code,name,category,status,updated_at').order('updated_at',{ascending:false}).limit(80),
       supabase.from('admin_organisations').select('id,metadata').limit(500),
-      supabase.from('admin_access_accounts').select('service_name,migration_status,legacy_healthcare,mfa_state,vault_reference,current_state,action_required,current_login_email,target_orvia_email').order('service_name',{ascending:true})
+      supabase.from('admin_access_accounts').select('service_name,migration_status,legacy_healthcare,mfa_state,vault_reference,current_state,action_required,current_login_email,target_orvia_email').order('service_name',{ascending:true}),
+      supabase.from('admin_verification_checks').select('id,title,verification_stage,status,next_recheck_at,notes').order('updated_at',{ascending:false}).limit(100)
     ]);
 
     const assets=assetsResult.data??[];
@@ -45,6 +46,9 @@ export async function POST(req:NextRequest){
     const accessLegacy=accessRows.filter((x:any)=>x.legacy_healthcare===true).length;
     const mfaUnknown=accessRows.filter((x:any)=>!x.legacy_healthcare&&['TBD','','UNKNOWN'].includes(String(x.mfa_state||'').toUpperCase())).length;
     const vaultUnknown=accessRows.filter((x:any)=>!x.legacy_healthcare&&['TBD','','UNKNOWN'].includes(String(x.vault_reference||'').toUpperCase())).length;
+    const verificationRows=verificationResult.data??[];
+    const verificationDue=verificationRows.filter((x:any)=>x.status==='open'&&(!x.next_recheck_at||new Date(x.next_recheck_at).getTime()<=Date.now())).length;
+    const verificationFailed=verificationRows.filter((x:any)=>x.status==='failed').length;
     const readOnly=isReadOnlyRequest(question);
     const authority=readOnly?'A0':classifyAuthority(question);
 
@@ -74,7 +78,12 @@ export async function POST(req:NextRequest){
       }
 
       const answer:string[]=[];
-      if(/\b(account|accounts|login|logins|access|credential|credentials|api key|api keys|password|passwords|mfa|vault|healthcare email|healthcare emails)\b/i.test(question)){
+      if(/\b(vera|vita|assurance|verify|verified|verification|effective|sustained|recheck)\b/i.test(question)){
+        answer.push(`${verificationDue} VERA verification check${verificationDue===1?' is':'s are'} due now; ${verificationFailed} recorded check${verificationFailed===1?' has':'s have'} failed and remain visible for review.`);
+        const due=verificationRows.filter((x:any)=>x.status==='open'&&(!x.next_recheck_at||new Date(x.next_recheck_at).getTime()<=Date.now())).slice(0,5);
+        if(due.length) answer.push(`Due: ${due.map((x:any)=>`${x.title} — ${humanStatus(x.verification_stage)}`).join('; ')}.`);
+        answer.push('VERA uses the Implemented → Verified → Effective → Sustained ladder; a failed check creates a controlled review item rather than being hidden.');
+      }else if(/\b(account|accounts|login|logins|access|credential|credentials|api key|api keys|password|passwords|mfa|vault|healthcare email|healthcare emails)\b/i.test(question)){
         answer.push(`${accessRows.length} non-secret account/access records are controlled; ${accessVerify} still need login or ownership verification.`);
         answer.push(`${accessLegacy} legacy Healthcare identity records remain for controlled migration; ${mfaUnknown} current accounts have unknown MFA state and ${vaultUnknown} have no assigned vault reference yet.`);
         const attention=accessRows.filter((x:any)=>!x.legacy_healthcare&&x.migration_status!=='KEEP').slice(0,5);
