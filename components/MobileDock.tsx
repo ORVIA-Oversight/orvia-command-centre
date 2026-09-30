@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, BriefcaseBusiness, FolderKanban, MessageCircle, ShieldCheck } from 'lucide-react';
+import { BookOpen, BriefcaseBusiness, FolderKanban, Mail, MessageCircle, ShieldCheck } from 'lucide-react';
 
 const items = [
   { href: '/', label: 'IRIS', icon: MessageCircle },
-  { href: '/workspace', label: 'Today', icon: BriefcaseBusiness },
+  { href: '/communications', label: 'Mail', icon: Mail },
   { href: '/work', label: 'Work', icon: FolderKanban },
   { href: '/projects', label: 'Estate', icon: ShieldCheck },
   { href: '/library', label: 'Evidence', icon: BookOpen },
