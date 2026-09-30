@@ -1,4 +1,6 @@
-import { DashboardHome } from '@/components/DashboardHome';
+import { IrisCommandHome } from '@/components/IrisCommandHome';
 import { Shell } from '@/components/Shell';
-import { Topbar } from '@/components/Topbar';
-export default function Page(){return <Shell><Topbar title="Founder Command Centre"/><DashboardHome/></Shell>}
+
+export default function Page(){
+  return <Shell><IrisCommandHome/></Shell>;
+}
