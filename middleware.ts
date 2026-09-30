@@ -21,9 +21,9 @@ async function verifyCommandSession(token?: string) {
 }
 
 export async function middleware(req: NextRequest) {
-  // Vapi must be able to reach the IRIS gateway without an interactive Command session.
-  // The route performs its own authentication using IRIS_VOICE_GATEWAY_SECRET.
-  if (req.nextUrl.pathname === '/api/iris/voice') {
+  // Machine gateways must be reachable without an interactive Command session.
+  // Each route performs its own bearer-secret authentication.
+  if (req.nextUrl.pathname === '/api/iris/voice' || req.nextUrl.pathname.startsWith('/api/agent-gateway/')) {
     return NextResponse.next();
   }
 
