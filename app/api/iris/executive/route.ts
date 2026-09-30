@@ -25,7 +25,7 @@ export async function GET(){
       supabase.from('admin_tasks').select('id,title,status,priority,owner,due_at,approval_required').gte('due_at',dayStart.toISOString()).lte('due_at',dayEnd.toISOString()).order('due_at',{ascending:true}),
       supabase.from('admin_work_queue').select('id,title,status,priority,assigned_to,approval_required,created_at').order('created_at',{ascending:false}).limit(100),
       supabase.from('command_mail_accounts').select('id,address,provider,status,business_area,last_sync_at'),
-      supabase.from('command_mail_items').select('id,state,risk_level,assigned_agent,priority,deadline_at').order('received_at',{ascending:false}).limit(500),
+      supabase.from('command_mail_items').select('id,state,risk_level,assigned_agent,priority,deadline_at,subject,from_name,from_address,received_at,summary,preview').order('received_at',{ascending:false}).limit(500),
       supabase.from('admin_media_assets').select('id,file_name,asset_type,business_area_code,sharepoint_item_id,sharepoint_drive_id,source_url,created_at').not('sharepoint_item_id','is',null).order('created_at',{ascending:false}).limit(8)
     ]);
 
@@ -66,6 +66,7 @@ export async function GET(){
         mailReplyReady:mailRows.filter((x:any)=>x.state==='reply_ready').length,
         highRiskMail:mailRows.filter((x:any)=>x.risk_level==='red').length
       },
+      recentMail:mailRows.slice(0,8),
       recentSharePoint:sharePointAssets.data??[],
       workforce:{
         gateway:gatewayConfigured()?'enabled':'human activation required',
