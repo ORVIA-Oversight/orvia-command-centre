@@ -104,17 +104,26 @@ function headerValue(headers: any[] | undefined, name: string) {
 }
 
 async function googleMessages(token: string) {
-  const list = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=35&q=newer_than%3A30d', {
-    headers: { authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  if (!list.ok) throw new Error(`Google inbox sync failed (${list.status})`);
-  const listData = await list.json() as { messages?: Array<{ id: string; threadId: string }> };
+  async function listByLabel(labelId: string, sourceFolder: string) {
+    const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+    url.searchParams.set('maxResults', '50');
+    url.searchParams.set('q', 'newer_than:30d');
+    url.searchParams.set('labelIds', labelId);
+    url.searchParams.set('includeSpamTrash', 'true');
+    const response = await fetch(url, { headers: { authorization: 'Bearer ' + token }, cache: 'no-store' });
+    if (!response.ok) throw new Error('Google ' + sourceFolder + ' sync failed (' + response.status + ')');
+    const data = await response.json() as { messages?: Array<{ id: string; threadId: string }> };
+    return (data.messages || []).map((message) => ({ ...message, sourceFolder }));
+  }
 
-  const detail = await Promise.all((listData.messages || []).map(async (message) => {
+  const inbox = await listByLabel('INBOX', 'inbox');
+  const spam = await listByLabel('SPAM', 'spam');
+  const merged = Array.from(new Map([...inbox, ...spam].map((message) => [message.id, message])).values());
+
+  const detail = await Promise.all(merged.map(async (message) => {
     const response = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-      { headers: { authorization: `Bearer ${token}` }, cache: 'no-store' },
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages/' + message.id + '?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date',
+      { headers: { authorization: 'Bearer ' + token }, cache: 'no-store' },
     );
     if (!response.ok) return null;
     const data = await response.json() as any;
@@ -132,6 +141,7 @@ async function googleMessages(token: string) {
       raw_meta: {
         labels: data.labelIds || [],
         provider: 'google',
+        source_folder: message.sourceFolder,
       },
     };
   }));
