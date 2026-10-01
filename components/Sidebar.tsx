@@ -25,7 +25,7 @@ const departments = [
 const business = [
   { href:'/communications', label:'Communications', icon:Mail },
   { href:'/clients', label:'Clients', icon:Users },
-  { href:'/social', label:'Socials', icon:Share2 },
+  { href:'/pulse', label:'PULSE / Socials', icon:Share2 },
   { href:'/production', label:'Media', icon:Video },
   { href:'/projects', label:'ORVIA Landscape', icon:Globe2 },
   { href:'/portal/reports', label:'Reports', icon:BarChart3 },
