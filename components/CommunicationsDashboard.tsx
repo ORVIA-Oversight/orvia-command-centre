@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock3,
   FileText,
+  Folder,
   Inbox,
   Mail,
   MessageSquareReply,
@@ -85,6 +86,7 @@ function riskLabel(level: string) {
 export function CommunicationsDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [active, setActive] = useState('needs_review');
+  const [activeFolder, setActiveFolder] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<MailItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,16 +146,31 @@ export function CommunicationsDashboard() {
     }
   }
 
+  const folders = useMemo(() => {
+    const items = data?.items ?? [];
+    const counts = new Map<string, number>();
+    for (const item of items) {
+      const folder = item.business_area || 'Unclassified';
+      counts.set(folder, (counts.get(folder) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [data]);
+
   const visible = useMemo(() => {
     const items = data?.items ?? [];
     return items.filter((item) => {
-      const inState = active === 'filed'
-        ? ['filed', 'automated'].includes(item.state)
-        : item.state === active;
+      const inState = active === 'all'
+        ? true
+        : active === 'filed'
+          ? ['filed', 'automated'].includes(item.state)
+          : item.state === active;
+      const inFolder = activeFolder ? (item.business_area || 'Unclassified') === activeFolder : true;
       const haystack = `${item.subject ?? ''} ${item.from_name ?? ''} ${item.from_address ?? ''} ${item.business_area ?? ''}`.toLowerCase();
-      return inState && haystack.includes(query.toLowerCase());
+      return inState && inFolder && haystack.includes(query.toLowerCase());
     });
-  }, [data, active, query]);
+  }, [data, active, activeFolder, query]);
 
   useEffect(() => {
     if (!selected || !visible.some((item) => item.id === selected.id)) {
@@ -346,9 +363,18 @@ export function CommunicationsDashboard() {
       <section className="mailWorkspace">
         <aside className="mailRail">
           <div className="mailRailTitle">Queues</div>
+          <button onClick={() => { setActive('all'); setActiveFolder(null); }} className={active === 'all' && !activeFolder ? 'active' : ''}>
+            <Mail size={16}/><span>All mail</span>
+          </button>
           {states.map(({ key, label, icon: Icon }) => (
-            <button key={key} onClick={() => setActive(key)} className={active === key ? 'active' : ''}>
+            <button key={key} onClick={() => { setActive(key); setActiveFolder(null); }} className={active === key && !activeFolder ? 'active' : ''}>
               <Icon size={16}/><span>{label}</span>
+            </button>
+          ))}
+          <div className="mailRailTitle">Folders</div>
+          {folders.map((folder) => (
+            <button key={folder.name} onClick={() => { setActive('all'); setActiveFolder(folder.name); }} className={activeFolder === folder.name ? 'active' : ''}>
+              <Folder size={15}/><span>{folder.name}</span><small>{folder.count}</small>
             </button>
           ))}
           <div className="mailRailTitle">Agents</div>
@@ -361,7 +387,7 @@ export function CommunicationsDashboard() {
           <div className="mailListHead">
             <div>
               <small>UNIFIED INBOX</small>
-              <h3>{states.find((x) => x.key === active)?.label}</h3>
+              <h3>{activeFolder || (active === 'all' ? 'All mail' : states.find((x) => x.key === active)?.label)}</h3>
             </div>
             <label><Search size={15}/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search this queue"/></label>
           </div>
