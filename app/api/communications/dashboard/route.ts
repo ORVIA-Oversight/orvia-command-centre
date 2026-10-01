@@ -2,6 +2,20 @@ import { NextResponse } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
+function jsonNoStore(payload: unknown, init?: { status?: number }) {
+  return NextResponse.json(payload, {
+    status: init?.status,
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store',
+    },
+  });
+}
 
 export async function GET() {
   const supabase = getServerSupabase();
@@ -13,7 +27,7 @@ export async function GET() {
   };
 
   if (!supabase) {
-    return NextResponse.json({
+    return jsonNoStore({
       live: false,
       providerReadiness,
       counts: { needsJohn: 0, replyReady: 0, waiting: 0, automated: 0 },
@@ -48,7 +62,7 @@ export async function GET() {
     triage: triageCount,
   };
 
-  return NextResponse.json({
+  return jsonNoStore({
     live: true,
     providerReadiness,
     counts,
@@ -58,6 +72,7 @@ export async function GET() {
     rules: rulesRes.data ?? [],
     voiceProfile: voiceRes.data ?? null,
     signature: signatureRes.data ?? null,
+    runtimeVersion: 'command-mail-live-read-v2',
     diagnostics: {
       accountsError: accountsRes.error ? {
         code: accountsRes.error.code,
