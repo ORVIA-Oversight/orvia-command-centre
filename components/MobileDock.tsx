@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, BriefcaseBusiness, FolderKanban, Mail, MessageCircle, ShieldCheck } from 'lucide-react';
+import { BookOpen, FolderKanban, MessageCircle, Users, History } from 'lucide-react';
 
 const items = [
-  { href: '/', label: 'IRIS', icon: MessageCircle },
-  { href: '/communications', label: 'Mail', icon: Mail },
-  { href: '/work', label: 'Work', icon: FolderKanban },
-  { href: '/projects', label: 'Estate', icon: ShieldCheck },
-  { href: '/library', label: 'Evidence', icon: BookOpen },
+  { href: '/', label: 'Home', icon: MessageCircle },
+  { href: '/history', label: 'History', icon: History },
+  { href: '/workforce', label: 'Teams', icon: Users },
+  { href: '/work', label: 'Tasks', icon: FolderKanban },
+  { href: '/library', label: 'HIVE', icon: BookOpen },
 ];
 
 export function MobileDock() {
