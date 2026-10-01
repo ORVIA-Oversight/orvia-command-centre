@@ -81,6 +81,7 @@ function riskLabel(level: string) {
   return 'Agent can handle';
 }
 
+// Production marker: consolidated mail sync + triage UI
 export function CommunicationsDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [active, setActive] = useState('needs_review');
