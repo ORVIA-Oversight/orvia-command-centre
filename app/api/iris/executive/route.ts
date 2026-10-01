@@ -56,6 +56,7 @@ export async function GET(){
         {code:'COMMAND_MAIL',label:'Command Mail',href:'/communications',status:(mailAccounts.data??[]).length?'accounts connected':'needs mailbox authorisation',ready:(mailAccounts.data??[]).length>0,updatedAt:(mailAccounts.data??[])[0]?.last_sync_at??null},
         layer('STRIPE','Finance / Stripe','/systems'),
         layer('VAPI','ARIA / Voice','/communications'),
+        layer('ORVIA_REACH','ORVIA Reach · Research Gateway','/systems'),
         layer('GITHUB','GitHub','/projects'),
         layer('VERCEL','Vercel','/projects')
       ],
