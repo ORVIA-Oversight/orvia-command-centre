@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Bell, Brain, BriefcaseBusiness, CalendarDays, CheckCircle2, ChevronRight,
@@ -90,6 +90,8 @@ export function CommandDashboardHome() {
   const [listening, setListening] = useState(false);
   const [voiceReplies, setVoiceReplies] = useState(true);
   const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const ariaAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ariaAvatarUrl = process.env.NEXT_PUBLIC_ARIA_AVATAR_URL || '/aria-face.jpg';
 
   useEffect(() => {
     fetch('/api/dashboard', { cache:'no-store' }).then(r=>r.json()).then(setDashboard).catch(()=>setDashboard({source:'unavailable'}));
@@ -122,14 +124,37 @@ export function CommandDashboardHome() {
   const agenda = (executive?.today?.scheduledTasks || []).slice(0,6);
   const recent = (dashboard?.recentWork || []).slice(0,5);
 
-  function speak(text:string) {
-    if (!voiceReplies || typeof window === 'undefined' || !('speechSynthesis' in window) || !text) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = voice?.lang || 'en-GB';
-    if (voice) u.voice = voice;
-    u.rate = .98;
-    window.speechSynthesis.speak(u);
+  async function speak(text:string) {
+    if (!voiceReplies || typeof window === 'undefined' || !text) return;
+
+    try {
+      ariaAudioRef.current?.pause();
+      const response = await fetch('/api/aria/speech', {
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({ text })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.audioUrl) {
+          const audio = new Audio(data.audioUrl);
+          ariaAudioRef.current = audio;
+          await audio.play();
+          return;
+        }
+      }
+    } catch {
+      // Fall through to the browser voice if HeyGen is temporarily unavailable.
+    }
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = voice?.lang || 'en-GB';
+      if (voice) u.voice = voice;
+      u.rate = .98;
+      window.speechSynthesis.speak(u);
+    }
   }
 
   function startListening() {
@@ -186,7 +211,13 @@ export function CommandDashboardHome() {
           <span className="commandDashAskMark"><Sparkles size={15}/></span>
           <input value={command} onChange={e=>setCommand(e.target.value)} placeholder="Ask IRIS anything… drag files, paste links, or tell me what to do" />
           <button type="button" className={listening?'active':''} onClick={startListening} title="Speak to IRIS">{listening?<MicOff size={17}/>:<Mic size={17}/>}</button>
-          <button type="button" onClick={()=>setVoiceReplies(v=>!v)} title="Toggle spoken replies">{voiceReplies?<Volume2 size={17}/>:<VolumeX size={17}/>}</button>
+          <button type="button" onClick={()=>{
+            if (voiceReplies) {
+              ariaAudioRef.current?.pause();
+              if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+            }
+            setVoiceReplies(v=>!v);
+          }} title="Toggle spoken replies">{voiceReplies?<Volume2 size={17}/>:<VolumeX size={17}/>}</button>
           <button className="commandDashSend" disabled={!command.trim() || sending} title="Send to IRIS"><Send size={16}/></button>
         </form>
         <Link className="commandDashBell" href="/work"><Bell size={18}/><i/></Link>
@@ -196,9 +227,7 @@ export function CommandDashboardHome() {
       <div className="commandDashLead">
         <section className="commandDashHero">
           <div className="commandDashAvatar">
-            {process.env.NEXT_PUBLIC_ARIA_AVATAR_URL
-              ? <img src={process.env.NEXT_PUBLIC_ARIA_AVATAR_URL} alt="IRIS — ORVIA AI deputy" />
-              : <div className="commandDashAvatarFallback"><Sparkles size={30}/><b>IRIS</b></div>}
+            <img src={ariaAvatarUrl} alt="ARIA — the visible face and voice of IRIS" />
           </div>
           <div className="commandDashHeroCopy">
             <small>ORVIA COMMAND</small>
@@ -264,7 +293,7 @@ export function CommandDashboardHome() {
         <div className="commandDashWorkforce">
           <button className="commandDashWorker irisWorker" onClick={()=>askIris('Give me the managing director brief and coordinate the workforce around today’s priorities.')}>
             <div className="commandDashWorkerAvatar">
-              {process.env.NEXT_PUBLIC_ARIA_AVATAR_URL ? <img src={process.env.NEXT_PUBLIC_ARIA_AVATAR_URL} alt="" /> : <Sparkles size={21}/>}
+              <img src={ariaAvatarUrl} alt="ARIA" />
             </div>
             <b>IRIS</b><span>Conductor</span><small><i/>Online</small>
           </button>
