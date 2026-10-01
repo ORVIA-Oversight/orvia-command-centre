@@ -39,11 +39,13 @@ export async function GET() {
   ]);
 
   const items = itemsRes.data ?? [];
+  const triageCount = items.filter((x: any) => x.state === 'needs_review').length;
   const counts = {
     needsJohn: items.filter((x: any) => x.state === 'needs_john').length,
     replyReady: items.filter((x: any) => x.state === 'reply_ready').length,
     waiting: items.filter((x: any) => x.state === 'waiting').length,
     automated: items.filter((x: any) => ['filed', 'automated'].includes(x.state)).length,
+    triage: triageCount,
   };
 
   return NextResponse.json({
@@ -69,6 +71,8 @@ export async function GET() {
         details: connectionsRes.error.details,
         hint: connectionsRes.error.hint,
       } : null,
+      itemRows: items.length,
+      triageRows: triageCount,
       itemsError: itemsRes.error ? {
         code: itemsRes.error.code,
         message: itemsRes.error.message,
