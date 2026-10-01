@@ -57,7 +57,7 @@ export default async function WorkforcePage(){
 
   return <Shell>
     <Topbar title="AI Workforce" eyebrow="ORVIA · DISTRIBUTED WORK CONTROL"/>
-    <div className="pageWrap">
+    <div className="pageWrap appLightPage">
       <section className="pageIntro">
         <div className="eyebrow">IRIS CONDUCTS · WORKERS EXECUTE</div>
         <h2>One controlled workforce, multiple AI providers.</h2>
