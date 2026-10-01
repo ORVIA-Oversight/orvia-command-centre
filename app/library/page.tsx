@@ -21,7 +21,7 @@ async function loadEvidenceIndex(){
 
 export default async function LibraryPage(){
  const data=await loadEvidenceIndex();
- return <Shell><Topbar title="Evidence & Library" eyebrow="ORVIA · HIVE CONTROL VIEW"/><div className="pageWrap">
+ return <Shell><Topbar title="Evidence & Library" eyebrow="ORVIA · HIVE CONTROL VIEW"/><div className="pageWrap appLightPage">
   <section className="pageIntro"><div className="eyebrow">ORIGINALS IN SHAREPOINT · STRUCTURE IN ORVIA</div><h2>Evidence stays attributable and recoverable.</h2><p>SharePoint remains the controlled store for originals. This workspace shows structured index and change-log state only; it does not promote a discovered or AI-derived item into approved evidence.</p></section>
 
   <div className="evidenceLinks">
