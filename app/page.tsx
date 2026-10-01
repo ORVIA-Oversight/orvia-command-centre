@@ -1,6 +1,6 @@
-import { IrisCommandHome } from '@/components/IrisCommandHome';
+import { CommandDashboardHome } from '@/components/CommandDashboardHome';
 import { Shell } from '@/components/Shell';
 
 export default function Page(){
-  return <Shell><IrisCommandHome/></Shell>;
+  return <Shell><CommandDashboardHome/></Shell>;
 }
