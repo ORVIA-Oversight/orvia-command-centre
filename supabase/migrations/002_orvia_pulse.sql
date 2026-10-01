@@ -133,3 +133,29 @@ create table if not exists public.pulse_learnings (
 -- 1. pulse_signals = what was observed
 -- 2. pulse_performance = what ORVIA's own campaigns actually did
 -- 3. pulse_interpretations / pulse_learnings = what ORVIA thinks the evidence may mean
+
+
+-- Security: PULSE is server-only in Command by default.
+alter table public.pulse_sources enable row level security;
+alter table public.pulse_signals enable row level security;
+alter table public.pulse_interpretations enable row level security;
+alter table public.pulse_campaigns enable row level security;
+alter table public.pulse_content_items enable row level security;
+alter table public.pulse_performance enable row level security;
+alter table public.pulse_learnings enable row level security;
+
+revoke all on table public.pulse_sources from anon, authenticated;
+revoke all on table public.pulse_signals from anon, authenticated;
+revoke all on table public.pulse_interpretations from anon, authenticated;
+revoke all on table public.pulse_campaigns from anon, authenticated;
+revoke all on table public.pulse_content_items from anon, authenticated;
+revoke all on table public.pulse_performance from anon, authenticated;
+revoke all on table public.pulse_learnings from anon, authenticated;
+
+grant select, insert, update, delete on table public.pulse_sources to service_role;
+grant select, insert, update, delete on table public.pulse_signals to service_role;
+grant select, insert, update, delete on table public.pulse_interpretations to service_role;
+grant select, insert, update, delete on table public.pulse_campaigns to service_role;
+grant select, insert, update, delete on table public.pulse_content_items to service_role;
+grant select, insert, update, delete on table public.pulse_performance to service_role;
+grant select, insert, update, delete on table public.pulse_learnings to service_role;
