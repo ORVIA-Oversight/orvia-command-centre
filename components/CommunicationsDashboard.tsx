@@ -101,7 +101,10 @@ export function CommunicationsDashboard() {
   async function load() {
     setLoading(true);
     try {
-      const response = await fetch('/api/communications/dashboard', { cache: 'no-store' });
+      const response = await fetch(`/api/communications/dashboard?ts=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'cache-control': 'no-cache' },
+      });
       setData(await response.json());
     } finally {
       setLoading(false);
