@@ -83,7 +83,7 @@ function riskLabel(level: string) {
 
 export function CommunicationsDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [active, setActive] = useState('needs_john');
+  const [active, setActive] = useState('needs_review');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<MailItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,8 +117,13 @@ export function CommunicationsDashboard() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error || 'Sync failed');
       const synced = Array.isArray(payload?.synced) ? payload.synced : [];
-      const total = synced.reduce((sum: number, row: any) => sum + Number(row.imported || 0), 0);
-      setSyncMessage(`Sync complete · ${total} message records checked`);
+      const checked = synced.reduce((sum: number, row: any) => sum + Number(row.checked || 0), 0);
+      const inserted = synced.reduce((sum: number, row: any) => sum + Number(row.inserted || 0), 0);
+      const updated = synced.reduce((sum: number, row: any) => sum + Number(row.updated || 0), 0);
+      const errors = synced.filter((row: any) => row.error).map((row: any) => row.error);
+      setSyncMessage(errors.length
+        ? `Sync finished with an issue · ${errors.join(' · ')}`
+        : `Sync complete · ${checked} checked · ${inserted} new · ${updated} refreshed`);
       await load();
     } catch (error) {
       setSyncMessage(error instanceof Error ? error.message : 'Sync failed');
