@@ -147,7 +147,7 @@ export async function POST() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const result: Array<{ address: string; imported: number; error?: string }> = [];
+  const result: Array<{ address: string; checked: number; inserted: number; updated: number; error?: string }> = [];
 
   for (const row of connections || []) {
     const connection = row as Connection & { command_mail_accounts: any };
@@ -176,14 +176,60 @@ export async function POST() {
         };
       });
 
+      let inserted = 0;
+      let updated = 0;
+
       if (records.length) {
-        const { error: insertError } = await supabase
+        const providerIds = records.map((record) => record.provider_message_id).filter(Boolean);
+        const { data: existingItems, error: existingError } = await supabase
           .from('command_mail_items')
-          .upsert(records, {
-            onConflict: 'account_id,provider_message_id',
-            ignoreDuplicates: true,
-          });
-        if (insertError) throw insertError;
+          .select('id,provider_message_id')
+          .eq('account_id', account.id)
+          .in('provider_message_id', providerIds);
+
+        if (existingError) throw existingError;
+
+        const existingByProviderId = new Map(
+          (existingItems || []).map((row: any) => [row.provider_message_id, row.id]),
+        );
+
+        const toInsert = records.filter((record) => !existingByProviderId.has(record.provider_message_id));
+        const toUpdate = records.filter((record) => existingByProviderId.has(record.provider_message_id));
+
+        if (toInsert.length) {
+          const { error: insertError } = await supabase
+            .from('command_mail_items')
+            .insert(toInsert);
+          if (insertError) throw insertError;
+          inserted = toInsert.length;
+        }
+
+        for (const record of toUpdate) {
+          const id = existingByProviderId.get(record.provider_message_id);
+          const { error: updateError } = await supabase
+            .from('command_mail_items')
+            .update({
+              from_address: record.from_address,
+              from_name: record.from_name,
+              subject: record.subject,
+              preview: record.preview,
+              received_at: record.received_at,
+              raw_meta: record.raw_meta,
+              classification: record.classification,
+              business_area: record.business_area,
+              priority: record.priority,
+              state: record.state,
+              risk_level: record.risk_level,
+              assigned_agent: record.assigned_agent,
+              requires_human: record.requires_human,
+              confidence: record.confidence,
+              summary: record.summary,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', id);
+          if (updateError) throw updateError;
+          updated += 1;
+        }
       }
 
       await supabase.from('command_mail_accounts').update({
@@ -192,7 +238,20 @@ export async function POST() {
         updated_at: new Date().toISOString(),
       }).eq('id', account.id);
 
-      result.push({ address: account.address, imported: records.length });
+      await supabase.from('command_mail_actions').insert({
+        action_type: 'mail_sync',
+        actor: 'system',
+        detail: {
+          account_id: account.id,
+          address: account.address,
+          provider: connection.provider,
+          checked: records.length,
+          inserted,
+          updated,
+        },
+      });
+
+      result.push({ address: account.address, checked: records.length, inserted, updated });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed';
       await supabase.from('command_mail_connections').update({
@@ -200,7 +259,7 @@ export async function POST() {
         last_error: message,
         updated_at: new Date().toISOString(),
       }).eq('id', connection.id);
-      result.push({ address: account?.address || 'Unknown account', imported: 0, error: message });
+      result.push({ address: account?.address || 'Unknown account', checked: 0, inserted: 0, updated: 0, error: message });
     }
   }
 
