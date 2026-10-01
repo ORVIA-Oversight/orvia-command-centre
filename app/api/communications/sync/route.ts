@@ -69,31 +69,34 @@ async function getAccessToken(connection: Connection, supabase: any) {
 }
 
 async function microsoftMessages(token: string) {
-  const url = new URL('https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages');
-  url.searchParams.set('$top', '50');
-  url.searchParams.set('$orderby', 'receivedDateTime desc');
-  url.searchParams.set('$select', 'id,conversationId,subject,bodyPreview,receivedDateTime,from,importance,isRead,hasAttachments');
-  const response = await fetch(url, {
-    headers: { authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  if (!response.ok) throw new Error(`Microsoft inbox sync failed (${response.status})`);
-  const data = await response.json() as { value?: any[] };
-  return (data.value || []).map((message) => ({
-    provider_message_id: message.id,
-    thread_id: message.conversationId || message.id,
-    from_address: message.from?.emailAddress?.address || '',
-    from_name: message.from?.emailAddress?.name || '',
-    subject: message.subject || '',
-    preview: message.bodyPreview || '',
-    received_at: message.receivedDateTime || new Date().toISOString(),
-    raw_meta: {
-      importance: message.importance,
-      is_read: message.isRead,
-      has_attachments: message.hasAttachments,
-      provider: 'microsoft',
-    },
-  }));
+  const folderIds = ['inbox', 'junkemail'];
+  const batches = [];
+  for (const folderId of folderIds) {
+    const url = new URL('https://graph.microsoft.com/v1.0/me/mailFolders/' + folderId + '/messages');
+    url.searchParams.set('$top', '50');
+    url.searchParams.set('$orderby', 'receivedDateTime desc');
+    url.searchParams.set('$select', 'id,conversationId,subject,bodyPreview,receivedDateTime,from,importance,isRead,hasAttachments');
+    const response = await fetch(url, { headers: { authorization: 'Bearer ' + token }, cache: 'no-store' });
+    if (!response.ok) throw new Error('Microsoft ' + folderId + ' sync failed (' + response.status + ')');
+    const data = await response.json() as { value?: any[] };
+    batches.push(...(data.value || []).map((message) => ({
+      provider_message_id: message.id,
+      thread_id: message.conversationId || message.id,
+      from_address: message.from?.emailAddress?.address || '',
+      from_name: message.from?.emailAddress?.name || '',
+      subject: message.subject || '',
+      preview: message.bodyPreview || '',
+      received_at: message.receivedDateTime || new Date().toISOString(),
+      raw_meta: {
+        importance: message.importance,
+        is_read: message.isRead,
+        has_attachments: message.hasAttachments,
+        provider: 'microsoft',
+        source_folder: folderId === 'junkemail' ? 'junk' : 'inbox',
+      },
+    })));
+  }
+  return batches;
 }
 
 function headerValue(headers: any[] | undefined, name: string) {
