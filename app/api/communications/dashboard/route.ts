@@ -25,8 +25,13 @@ export async function GET() {
     });
   }
 
-  const [accountsRes, itemsRes, rulesRes, voiceRes, signatureRes] = await Promise.all([
-    supabase.from('command_mail_accounts').select('*').order('created_at', { ascending: true }),
+  const [accountsRes, connectionsRes, itemsRes, rulesRes, voiceRes, signatureRes] = await Promise.all([
+    supabase.from('command_mail_accounts')
+      .select('id,provider,address,display_name,account_type,business_area,status,last_sync_at,created_at,updated_at')
+      .order('created_at', { ascending: true }),
+    supabase.from('command_mail_connections')
+      .select('id,account_id,provider,provider_user_id,expires_at,status,last_error,created_at,updated_at')
+      .order('created_at', { ascending: true }),
     supabase.from('command_mail_items').select('*').order('received_at', { ascending: false }).limit(80),
     supabase.from('command_mail_rules').select('*').order('precedence', { ascending: true }),
     supabase.from('command_voice_profiles').select('*').eq('identity_key', 'john-mcgill').maybeSingle(),
@@ -46,9 +51,30 @@ export async function GET() {
     providerReadiness,
     counts,
     accounts: accountsRes.data ?? [],
+    connections: connectionsRes.data ?? [],
     items,
     rules: rulesRes.data ?? [],
     voiceProfile: voiceRes.data ?? null,
     signature: signatureRes.data ?? null,
+    diagnostics: {
+      accountsError: accountsRes.error ? {
+        code: accountsRes.error.code,
+        message: accountsRes.error.message,
+        details: accountsRes.error.details,
+        hint: accountsRes.error.hint,
+      } : null,
+      connectionsError: connectionsRes.error ? {
+        code: connectionsRes.error.code,
+        message: connectionsRes.error.message,
+        details: connectionsRes.error.details,
+        hint: connectionsRes.error.hint,
+      } : null,
+      itemsError: itemsRes.error ? {
+        code: itemsRes.error.code,
+        message: itemsRes.error.message,
+        details: itemsRes.error.details,
+        hint: itemsRes.error.hint,
+      } : null,
+    },
   });
 }
