@@ -40,3 +40,128 @@
 @media(max-width:1080px){.irisHeroPanel{grid-template-columns:1fr}.irisPresence{align-items:center;text-align:center}.irisIdentity>p{max-width:650px}.irisTrustLine{justify-content:center}.irisTeamGrid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:820px){.irisCommand{padding:18px 16px 86px}.irisCommandTop{align-items:flex-start}.irisCommandTopActions{flex-direction:column;align-items:stretch}.irisAttention{display:none}.irisQuickActions{grid-template-columns:repeat(2,1fr)}.irisTeamGrid,.irisLowerGrid{grid-template-columns:1fr}}
 @media(max-width:520px){.irisCommandTop h1{font-size:24px}.irisVoiceToggle span{display:none}.irisHeroPanel{padding:17px;border-radius:19px}.irisConversation{padding:12px;min-height:330px}.irisQuickActions{grid-template-columns:1fr 1fr}.irisComposerBar{align-items:flex-end}.irisComposerLeft a span{display:none}.irisAgentCard{grid-template-columns:auto 1fr}.irisAgentCard>svg{display:none}}
+
+
+/* ORVIA Command light workforce shell — Oct 2026 */
+.irisCommand{
+  background:linear-gradient(180deg,#f8f5ef 0%,#f2eee7 100%);
+  color:#102a44;
+  padding-bottom:96px;
+}
+.irisCommandTop{align-items:center}
+.irisCommandTop h1{font-size:30px;color:#102a44}
+.irisHeroPanel{
+  background:linear-gradient(135deg,#fffdf9 0%,#f9f4ec 58%,#eef7f7 100%);
+  color:#102a44;
+  border:1px solid #ded7cc;
+  box-shadow:0 18px 48px rgba(34,46,58,.08);
+}
+.irisHeroPanel:after{
+  border-color:rgba(47,127,134,.12);
+  box-shadow:0 0 0 48px rgba(47,127,134,.03),0 0 0 96px rgba(106,46,124,.018);
+}
+.irisAvatarFace{
+  background:linear-gradient(145deg,#ffffff,#edf8f8);
+  color:#2F7F86;
+  box-shadow:0 16px 34px rgba(47,127,134,.16),inset 0 0 0 1px rgba(11,45,92,.08);
+}
+.irisPulse{border-color:rgba(47,127,134,.35)}
+.irisNameRow h2{color:#102a44}
+.irisNameRow span{color:#6a2e7c;border-color:#d9c9de;background:#f5eef7}
+.irisIdentity>p{color:#5f6e7e}
+.irisTrustLine{color:#2F7F86}
+.irisConversation{
+  background:#fff;
+  border-color:#e2dbd1;
+  box-shadow:0 14px 36px rgba(34,46,58,.07);
+}
+.irisWelcome,.irisReply{background:#fbf9f5;border-color:#e7e0d6}
+.irisComposer{border-color:#d7d0c5}
+.irisSend{background:#0B2D5C;color:#fff}
+.irisQuickActions button,.irisSection,.irisStatusCard{background:#fff;border-color:#ddd6cc}
+.irisQuickActions button:hover{border-color:#9fc9cb;background:#f4fbfb}
+.irisAgentCard{
+  position:relative;
+  overflow:hidden;
+  background:#fff;
+  border-color:#e1d9cf;
+  min-height:96px;
+}
+.irisAgentCard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#d8d0c5}
+.irisAgentCard:nth-child(5n+1):before{background:#0B2D5C}
+.irisAgentCard:nth-child(5n+2):before{background:#2F7F86}
+.irisAgentCard:nth-child(5n+3):before{background:#F0A51A}
+.irisAgentCard:nth-child(5n+4):before{background:#6A2E7C}
+.irisAgentCard:nth-child(5n+5):before{background:#E34B23}
+.irisAgentAvatar{
+  overflow:hidden;
+  background:#0B2D5C;
+  color:#fff;
+  border-radius:14px;
+}
+.irisAgentAvatar img{width:100%;height:100%;object-fit:cover}
+.irisAgentAvatar span{font-size:11px;font-weight:900;letter-spacing:.03em}
+.irisAgentCopy b{font-size:11px}
+.irisAgentCopy span{text-transform:capitalize}
+.irisStatusRows>div{border-bottom-color:#ece6dd}
+
+.appLightPage{
+  background:linear-gradient(180deg,#f8f5ef 0%,#f2eee7 100%);
+  color:#102a44;
+  min-height:calc(100vh - 74px);
+  padding-bottom:96px;
+}
+.appLightPage .pageIntro,.appLightPage .panel,.appLightPage .metricCard{
+  background:#fff!important;
+  color:#102a44!important;
+  border-color:#ddd6cc!important;
+  box-shadow:0 10px 28px rgba(34,46,58,.06)!important;
+}
+.appLightPage .pageIntro{border-top:5px solid #0B2D5C!important}
+.appLightPage .pageIntro h2,.appLightPage .panel h3,.appLightPage .metricCard strong,
+.appLightPage .systemRow b,.appLightPage .activityList b{color:#102a44!important}
+.appLightPage .pageIntro p,.appLightPage .metricCard span,.appLightPage .systemRow small,
+.appLightPage .activityList small,.appLightPage .workspaceEmpty span{color:#6d7884!important}
+.appLightPage .panelHead{
+  background:#fff!important;
+  color:#102a44!important;
+  border-bottom:1px solid #ece6dd!important;
+}
+.appLightPage .panelHead span{color:#2F7F86!important}
+.appLightPage .panelBody{background:#fff}
+.appLightPage .systemRow{
+  background:#fbf9f5!important;
+  border-color:#e6ded4!important;
+}
+.appLightPage .activityList>div{border-bottom-color:#ece6dd!important}
+.appLightPage .workspaceEmpty b{color:#102a44!important}
+.appLightPage .workColumn{
+  background:#fff!important;
+  border-color:#ddd6cc!important;
+  box-shadow:0 10px 28px rgba(34,46,58,.06);
+}
+.appLightPage .workCard{
+  background:#fbf9f5!important;
+  color:#102a44!important;
+  border-color:#e5ddd3!important;
+}
+.appLightPage .workCard strong,.appLightPage .workCard p{color:#102a44!important}
+.threeColHistory{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.appHeroLight{background:linear-gradient(120deg,#fff 0%,#fff 68%,#eef7f7 100%)!important}
+
+.mobileDock{
+  background:rgba(255,253,249,.96)!important;
+  border-top:1px solid #ddd6cc!important;
+  box-shadow:0 -10px 30px rgba(34,46,58,.08);
+}
+.mobileDock a{color:#79828d!important}
+.mobileDock a.active{color:#0B2D5C!important}
+.mobileDock a.active:before{background:#F0A51A!important}
+
+@media(max-width:1050px){
+  .ovSidebar{display:none!important}
+  .mainShell{margin-left:0!important}
+}
+@media(max-width:900px){
+  .threeColHistory{grid-template-columns:1fr}
+}
