@@ -66,6 +66,54 @@ export function classifyMail(input: MailClassificationInput) {
     };
   }
 
+  if (contains('airsoft found', 'airsoftfound', 'marketplace', 'range day', 'seller', 'buyer', 'listing', 'postage', 'tracking')) {
+    return {
+      classification: 'airsoft_found',
+      business_area: 'Airsoft Found',
+      priority: 'normal',
+      state: 'needs_review',
+      risk_level: 'amber',
+      assigned_agent: 'Airsoft Found Agent',
+      requires_human: false,
+    };
+  }
+
+  if (contains('vanguard tactical', 'vanguard', 'milsim', 'six troop', '6 troop', 'atac', 'loadout', 'site organiser', 'event organiser')) {
+    return {
+      classification: 'vanguard',
+      business_area: 'Vanguard Tactical',
+      priority: 'normal',
+      state: 'needs_review',
+      risk_level: 'amber',
+      assigned_agent: 'Vanguard Agent',
+      requires_human: false,
+    };
+  }
+
+  if (contains('orvia voice', 'voice service', 'ivr', 'call handling', 'outbound calls', '0330 043 3703')) {
+    return {
+      classification: 'orvia_voice',
+      business_area: 'ORVIA Voice',
+      priority: 'normal',
+      state: 'reply_ready',
+      risk_level: 'amber',
+      assigned_agent: 'Voice Agent',
+      requires_human: true,
+    };
+  }
+
+  if (contains('orvia web', 'website build', 'web build', 'domain connection', 'landing page', 'one-page site', 'web app')) {
+    return {
+      classification: 'orvia_web',
+      business_area: 'ORVIA Web',
+      priority: 'normal',
+      state: 'reply_ready',
+      risk_level: 'amber',
+      assigned_agent: 'Web Agent',
+      requires_human: true,
+    };
+  }
+
   if (contains('enquiry', 'inquiry', 'quote', 'quotation', 'proposal', 'demo', 'pricing', 'price', 'sales', 'interested in', 'book a call', 'lead', 'prospect')) {
     return {
       classification: 'sales',
