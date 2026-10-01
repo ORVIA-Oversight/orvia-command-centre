@@ -12,11 +12,29 @@ export function classifyMail(input: MailClassificationInput) {
   const contains = (...terms: string[]) => terms.some((term) => text.includes(term));
   const automatedSender = /no-?reply|notifications?|mailer-daemon|donotreply/.test(from);
 
-  if (contains('safeguard', 'disciplinary', 'grievance', 'solicitor', 'legal notice', 'court', 'ico ', 'cqc ', 'complaint', 'contract variation')) {
+  // Family / Mia evidence is deliberately its own protected evidence stream.
+  // It must never be auto-replied to, silently filed, or mixed into ordinary business triage.
+  if (contains(
+    'mia', 'jama', 'dowrick', 'cafcass', 'family court', 'child arrangements',
+    'parental responsibility', 'section 7', 'section 47', 'c100',
+    'lincolnshire family', 'dr stevenson', 'carter brown', 'lorna smith'
+  )) {
     return {
-      classification: 'high_consequence',
-      business_area: 'Governance',
-      priority: contains('urgent', 'deadline', 'today') ? 'urgent' : 'high',
+      classification: 'mia_family_evidence',
+      business_area: 'Mia / Family Evidence',
+      priority: contains('hearing', 'deadline', 'order', 'urgent', 'today') ? 'urgent' : 'high',
+      state: 'needs_john',
+      risk_level: 'red',
+      assigned_agent: 'Evidence Review Agent',
+      requires_human: true,
+    };
+  }
+
+  if (contains('solicitor', 'barrister', 'legal notice', 'court', 'hearing', 'court order', 'ico ', 'cqc ', 'complaint', 'contract variation', 'safeguard', 'disciplinary', 'grievance')) {
+    return {
+      classification: 'legal_governance',
+      business_area: 'Legal / Governance',
+      priority: contains('urgent', 'deadline', 'today', 'hearing') ? 'urgent' : 'high',
       state: 'needs_john',
       risk_level: 'red',
       assigned_agent: 'Governance Agent',
@@ -48,7 +66,7 @@ export function classifyMail(input: MailClassificationInput) {
     };
   }
 
-  if (contains('enquiry', 'inquiry', 'quote', 'quotation', 'proposal', 'demo', 'pricing', 'price', 'sales', 'interested in', 'book a call')) {
+  if (contains('enquiry', 'inquiry', 'quote', 'quotation', 'proposal', 'demo', 'pricing', 'price', 'sales', 'interested in', 'book a call', 'lead', 'prospect')) {
     return {
       classification: 'sales',
       business_area: 'Sales',
@@ -81,6 +99,18 @@ export function classifyMail(input: MailClassificationInput) {
       risk_level: 'amber',
       assigned_agent: 'Technical Agent',
       requires_human: true,
+    };
+  }
+
+  if (contains('vanguard', 'airsoft', 'milsim', 'six troop', '6 troop', 'atac')) {
+    return {
+      classification: 'vanguard',
+      business_area: 'Vanguard',
+      priority: 'normal',
+      state: 'needs_review',
+      risk_level: 'amber',
+      assigned_agent: 'Vanguard Agent',
+      requires_human: false,
     };
   }
 
