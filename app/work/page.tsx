@@ -41,7 +41,7 @@ export default async function WorkPage(){
   {key:'complete',title:'COMPLETED',icon:CheckCircle2,rows:complete}
  ];
 
- return <Shell><Topbar title="Work" eyebrow="ORVIA · LIVE WORK STATE"/><div className="pageWrap">
+ return <Shell><Topbar title="Work" eyebrow="ORVIA · LIVE WORK STATE"/><div className="pageWrap appLightPage">
   <section className="pageIntro"><div className="eyebrow">ONE QUEUE</div><h2>Work moves through ORVIA once.</h2><p>Tasks and IRIS-routed work are shown together. Read-only questions do not create work items. Consequential actions remain visible until a human authority decision is recorded.</p></section>
   <section className="workBoard">
    {columns.map(({key,title,icon:Icon,rows})=><article className={'workColumn '+key} key={key}>
