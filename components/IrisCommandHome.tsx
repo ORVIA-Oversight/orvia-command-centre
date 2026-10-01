@@ -278,6 +278,7 @@ export function IrisCommandHome() {
         <button onClick={() => askIris('Show me anything overdue, blocked or waiting for approval.')}>What is stuck?</button>
         <button onClick={() => askIris('Review current health and social care priorities and tell me the top three risks.')}>Top risks</button>
         <button onClick={() => askIris('Prepare a concise management handover from current work and evidence.')}>Prepare handover</button>
+        <button onClick={() => { setTargetAgent('PULSE-01'); setCommand('Review our current social and market signals, tell me what is working, what is not, and recommend the next evidence-led content test.'); }}>Social pulse</button>
       </section>
 
       <section className="irisSection">
