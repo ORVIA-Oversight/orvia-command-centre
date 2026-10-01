@@ -1,8 +1,9 @@
-import { Activity, Database, ExternalLink, Globe2, KeyRound, Mail, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Activity, Database, ExternalLink, Globe2, KeyRound, Mail, ShieldAlert, ShieldCheck, Cpu, BadgePoundSterling } from 'lucide-react';
 import { Shell } from '@/components/Shell';
 import { Topbar } from '@/components/Topbar';
 import { getServerSupabase } from '@/lib/supabase-server';
 import { accessSummary, loadAccessRegister } from '@/lib/access-register';
+import { AI_PROVIDER_COMMERCIAL } from '@/lib/ai-provider-commercial';
 
 export const dynamic='force-dynamic';
 export const revalidate=0;
@@ -84,6 +85,25 @@ export default async function SystemsPage(){
       </tr>)}</tbody>
     </table></div>
    </div>
+  </section>
+
+  <section className="panel spaced">
+    <div className="panelHead"><div><span>AI PROVIDERS & LICENSING</span><h3>What a customer needs to run the ORVIA AI workforce</h3></div><Cpu size={18}/></div>
+    <div className="panelBody">
+      <div className="systemsGrid">
+        {AI_PROVIDER_COMMERCIAL.map(p=><div className="systemRow" key={p.code}>
+          <div>
+            <b>{p.provider}</b>
+            <small>{p.capability}<br/>{p.clientAccount}<br/><strong>{p.publishedPrice}</strong><br/>{p.apiBilling}</small>
+          </div>
+          <span className={'statusBadge '+(p.requirement==='required'?'status-purple':p.requirement==='suite-included'?'status-teal':'status-gold')}>{p.requirement.replaceAll('-',' ')}</span>
+        </div>)}
+      </div>
+      <div className="accessNotice" style={{marginTop:14}}>
+        <BadgePoundSterling size={18}/>
+        <p><b>ORVIA sells the operating system, not hidden third-party subscriptions.</b><span>During onboarding, show which licences the customer already owns, what is optional, what API usage is metered separately, and where an approved partner/reseller route can be used.</span></p>
+      </div>
+    </div>
   </section>
 
   <section className="twoCol spaced">
