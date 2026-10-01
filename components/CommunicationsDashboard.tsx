@@ -97,6 +97,14 @@ export function CommunicationsDashboard() {
   const [actionMessage, setActionMessage] = useState('');
   const [writingOwn, setWritingOwn] = useState(false);
   const [customBody, setCustomBody] = useState('');
+  const [composing, setComposing] = useState(false);
+  const [composeAccountId, setComposeAccountId] = useState('');
+  const [composeTo, setComposeTo] = useState('');
+  const [composeCc, setComposeCc] = useState('');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+  const [composeSending, setComposeSending] = useState(false);
+  const [composeMessage, setComposeMessage] = useState('');
 
   async function load() {
     setLoading(true);
@@ -188,6 +196,40 @@ export function CommunicationsDashboard() {
     return () => { cancelled = true; };
   }, [selected?.id, selected?.state]);
 
+  async function sendNewEmail() {
+    if (!composeAccountId || !composeTo.trim() || !composeSubject.trim() || !composeBody.trim()) {
+      setComposeMessage('Choose a sending account and enter recipient, subject and message.');
+      return;
+    }
+    setComposeSending(true);
+    setComposeMessage('');
+    try {
+      const response = await fetch('/api/communications/send', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          account_id: composeAccountId,
+          to: composeTo.trim(),
+          cc: composeCc.trim(),
+          subject: composeSubject.trim(),
+          body: composeBody,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || 'Email could not be sent');
+      setComposeMessage('Email sent.');
+      setComposeTo('');
+      setComposeCc('');
+      setComposeSubject('');
+      setComposeBody('');
+      await load();
+    } catch (error) {
+      setComposeMessage(error instanceof Error ? error.message : 'Email could not be sent');
+    } finally {
+      setComposeSending(false);
+    }
+  }
+
   async function sendReply() {
     if (!selected) return;
     const chosen = drafts.find((draft) => draft.id === selectedDraft);
@@ -268,11 +310,38 @@ export function CommunicationsDashboard() {
         <div className="mailControlActions">
           {data?.providerReadiness.microsoft && <a href="/api/communications/connect/microsoft">+ Microsoft</a>}
           {data?.providerReadiness.google && <a href="/api/communications/connect/google">+ Google</a>}
+          <button onClick={() => {
+            setComposing((value) => !value);
+            if (!composeAccountId && data?.accounts?.[0]?.id) setComposeAccountId(data.accounts[0].id);
+          }}><MessageSquareReply size={14}/>{composing ? 'Close composer' : 'New email'}</button>
           <button onClick={syncMail} disabled={syncing || !data?.accounts?.length}><Mail size={14}/>{syncing ? 'Syncing…' : 'Sync mail'}</button>
           <button onClick={load} disabled={loading}><RefreshCw size={14}/>{loading ? 'Refreshing…' : 'Refresh'}</button>
         </div>
       </section>
       {syncMessage ? <div className="mailSyncMessage">{syncMessage}</div> : null}
+
+      {composing ? (
+        <section className="mailFoundation">
+          <article style={{gridColumn:'1 / -1',display:'block'}}>
+            <div style={{display:'grid',gap:10}}>
+              <div><b>Write a new email</b><p>Send directly yourself from any connected mailbox. IRIS is not required.</p></div>
+              <select value={composeAccountId} onChange={(e) => setComposeAccountId(e.target.value)}>
+                <option value="">Choose sending account</option>
+                {(data?.accounts || []).map((account) => <option key={account.id} value={account.id}>{account.address}</option>)}
+              </select>
+              <input value={composeTo} onChange={(e) => setComposeTo(e.target.value)} placeholder="To" />
+              <input value={composeCc} onChange={(e) => setComposeCc(e.target.value)} placeholder="Cc (optional, comma separated)" />
+              <input value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} placeholder="Subject" />
+              <textarea value={composeBody} onChange={(e) => setComposeBody(e.target.value)} placeholder="Write your message…" rows={10}/>
+              {composeMessage ? <div className="mailActionMessage">{composeMessage}</div> : null}
+              <div className="mailDetailActions">
+                <button className="primary" onClick={sendNewEmail} disabled={composeSending}>{composeSending ? 'Sending…' : 'Send email'}</button>
+                <button onClick={() => setComposing(false)}>Cancel</button>
+              </div>
+            </div>
+          </article>
+        </section>
+      ) : null}
 
       <section className="mailWorkspace">
         <aside className="mailRail">
@@ -375,7 +444,7 @@ export function CommunicationsDashboard() {
                   {actionMessage ? <div className="mailActionMessage">{actionMessage}</div> : null}
                   <div className="mailDetailActions">
                     <button className="primary" onClick={sendReply} disabled={sending || drafting}>{sending ? 'Sending…' : selected.risk_level === 'red' ? 'Review & send' : 'Send selected'}</button>
-                    <button onClick={() => setWritingOwn((value) => !value)}>{writingOwn ? 'Use prepared reply' : 'Write my own'}</button>
+                    <button onClick={() => setWritingOwn((value) => !value)}>{writingOwn ? 'Use prepared reply' : 'Reply myself'}</button>
                   </div>
                 </>
               ) : (
