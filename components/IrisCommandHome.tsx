@@ -36,20 +36,12 @@ type ExecutiveBrief = {
   today?: { scheduledTasks:any[]; openWork:number; approvals:number; mailNeedsJohn:number; mailReplyReady:number; highRiskMail:number };
   workforce?: {
     gateway:string;
-    specialistTeams:Array<{code:string;name:string;purpose:string;riskCeiling:string}>;
-    externalWorkers:Array<{code:string;name:string;connection:string;riskCeiling:string}>;
+    specialistTeams:Array<{code:string;name:string;purpose:string;riskCeiling:string;department?:string;accent?:string|null;avatarUri?:string|null;reportsTo?:string}>;
+    externalWorkers:Array<{code:string;name:string;connection:string;riskCeiling:string;department?:string;accent?:string|null;avatarUri?:string|null;reportsTo?:string}>;
     schedules:any[];
   };
 };
 
-const specialists = [
-  { name: 'Katie', role: 'Quality & Compliance', note: 'Audits, readiness, actions and evidence.', icon: BadgeCheck, seed: 'Katie, review quality and compliance priorities for me.' },
-  { name: 'Maya', role: 'People & Workforce', note: 'Training, recruitment, staffing and onboarding.', icon: UserRoundCog, seed: 'Maya, review the workforce picture and tell me what needs attention.' },
-  { name: 'Eleanor', role: 'Governance & Evidence', note: 'Policies, chronology, evidence and board assurance.', icon: FileText, seed: 'Eleanor, review governance and evidence gaps for me.' },
-  { name: 'ARIA', role: 'Communications', note: 'Calls, enquiries, messages and follow-up.', icon: MessageSquareText, seed: 'ARIA, review communications and tell me what needs a response.' },
-  { name: 'Safeguarding', role: 'Safeguarding Support', note: 'Preparation, chronology and escalation support. Human judgement retained.', icon: ShieldCheck, seed: 'Review current safeguarding work and highlight anything requiring human attention.' },
-  { name: 'Insight', role: 'Data & Performance', note: 'Trends, summaries and management insight.', icon: HeartPulse, seed: 'Review our current performance picture and brief me on what matters.' },
-];
 
 function chooseBritishVoice(voices: SpeechSynthesisVoice[]) {
   const preferred = ['Sonia', 'Libby', 'Hazel', 'Susan', 'Serena', 'Microsoft Sonia', 'Google UK English Female'];
@@ -190,7 +182,7 @@ export function IrisCommandHome() {
       <header className="irisCommandTop">
         <div>
           <small>ORVIA COMMAND · HEALTH & SOCIAL CARE PILOT</small>
-          <h1>Talk to IRIS</h1>
+          <h1>Command</h1>
         </div>
         <div className="irisCommandTopActions">
           <button
@@ -300,10 +292,12 @@ export function IrisCommandHome() {
           <button onClick={()=>{setTargetAgent('SAFEGUARD-01');setCommand('Review safeguarding work and surface only matters needing human attention.');}}>Safeguarding</button>
         </div>
         <div className="irisTeamGrid">
-          {specialists.map(({ name, role, note, icon: Icon, seed }) => (
-            <button key={name} className="irisAgentCard" onClick={() => setCommand(seed)}>
-              <div className="irisAgentAvatar"><Icon size={20}/></div>
-              <div className="irisAgentCopy"><b>{name}</b><span>{role}</span><small>{note}</small></div>
+          {(executive?.workforce?.specialistTeams||[]).slice(0,9).map((agent) => (
+            <button key={agent.code} className="irisAgentCard" onClick={() => { setTargetAgent(agent.code); setCommand(`${agent.name}, review your area and tell me what needs attention.`); }}>
+              <div className="irisAgentAvatar" style={{background:agent.accent||undefined}}>
+                {agent.avatarUri ? <img src={agent.avatarUri} alt="" /> : <span>{agent.name.split(' ').filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()}</span>}
+              </div>
+              <div className="irisAgentCopy"><b>{agent.name}</b><span>{agent.department||'Specialist'}</span><small>{agent.purpose}</small></div>
               <ArrowRight size={16}/>
             </button>
           ))}

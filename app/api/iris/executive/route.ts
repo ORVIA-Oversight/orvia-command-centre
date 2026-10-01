@@ -20,7 +20,7 @@ export async function GET(){
   try{
     const [integrations,agents,schedules,tasks,work,mailAccounts,mailItems]=await Promise.all([
       supabase.from('admin_integrations').select('code,name,category,status,updated_at'),
-      supabase.from('admin_agents').select('code,display_name,agent_type,purpose,risk_ceiling,active,metadata').eq('active',true),
+      supabase.from('admin_agents').select('code,display_name,agent_type,purpose,risk_ceiling,active,avatar_uri,metadata').eq('active',true),
       supabase.from('admin_worker_schedules').select('schedule_code,worker_code,title,active,risk_level,approval_required,verification_required,local_time,timezone'),
       supabase.from('admin_tasks').select('id,title,status,priority,owner,due_at,approval_required').gte('due_at',dayStart.toISOString()).lte('due_at',dayEnd.toISOString()).order('due_at',{ascending:true}),
       supabase.from('admin_work_queue').select('id,title,status,priority,assigned_to,approval_required,created_at').order('created_at',{ascending:false}).limit(100),
@@ -50,6 +50,7 @@ export async function GET(){
       layers:[
         layer('MONDAY','Monday.com','/work'),
         layer('DEERFLOW','DeerFlow Work Floor','/workforce'),
+        layer('BUZZ','Buzz Collaboration','/workforce'),
         layer('M365','Microsoft 365 / SharePoint','/systems'),
         {code:'COMMAND_MAIL',label:'Command Mail',href:'/communications',status:(mailAccounts.data??[]).length?'accounts connected':'needs mailbox authorisation',ready:(mailAccounts.data??[]).length>0,updatedAt:(mailAccounts.data??[])[0]?.last_sync_at??null},
         layer('STRIPE','Finance / Stripe','/systems'),
@@ -67,8 +68,8 @@ export async function GET(){
       },
       workforce:{
         gateway:gatewayConfigured()?'enabled':'human activation required',
-        specialistTeams:specialists.map((x:any)=>({code:x.code,name:x.display_name,purpose:x.purpose,riskCeiling:x.risk_ceiling})),
-        externalWorkers:externalWorkers.map((x:any)=>({code:x.code,name:x.display_name,connection:x.metadata?.connection_state??'unknown',riskCeiling:x.risk_ceiling})),
+        specialistTeams:specialists.map((x:any)=>({code:x.code,name:x.display_name,purpose:x.purpose,riskCeiling:x.risk_ceiling,department:x.metadata?.department||x.metadata?.workforce_profile||'specialist',accent:x.metadata?.accent||null,avatarUri:x.avatar_uri||null,reportsTo:x.metadata?.reports_to||'IRIS'})),
+        externalWorkers:externalWorkers.map((x:any)=>({code:x.code,name:x.display_name,connection:x.metadata?.connection_state??'unknown',riskCeiling:x.risk_ceiling,department:'external',accent:'#7B8794',avatarUri:x.avatar_uri||null,reportsTo:'IRIS'})),
         schedules:schedules.data??[]
       }
     });
