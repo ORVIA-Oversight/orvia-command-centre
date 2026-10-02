@@ -75,6 +75,35 @@ export async function POST(req:NextRequest){
 
     const readOnly=isReadOnlyRequest(question);
     const authority=readOnly?'A0':classifyAuthority(question);
+    const explicitReachResearch=/\b(orvia reach|research this|research properly|research with reach|use reach|source this)\b/i.test(question);
+
+    if(explicitReachResearch){
+      if(!orviaReachConfigured()){
+        return NextResponse.json({
+          status:'INCOMPLETE',
+          model:'IRIS',
+          reason:'ORVIA Reach is built into Command but its research worker is not activated yet. I have not fabricated a research result.'
+        },{status:503});
+      }
+
+      const research=await searchOrviaReach({query:question,maxResults:8});
+      const top=research.sources.slice(0,5);
+      const answer=top.length
+        ? [
+            `I found ${research.sources.length} sourced result${research.sources.length===1?'':'s'} through ORVIA Reach.`,
+            ...top.map((s:any,i:number)=>`${i+1}. ${s.title} — ${s.source}${s.snippet? `: ${s.snippet.slice(0,220)}`:''} (${s.url})`),
+            'These are retrieved sources, not automatically verified facts. Material claims still need VERA checking before consequential use.'
+          ].join(' ')
+        : 'ORVIA Reach completed the search but returned no usable sourced results.';
+
+      return NextResponse.json({
+        status:'COMPLETE',
+        model:'IRIS',
+        answer,
+        authority:'A0',
+        research:{sourceCount:research.sources.length,backend:research.backend,warnings:research.warnings??[]}
+      });
+    }
 
     if(readOnly){
       const activeTasks=tasks.filter((x:any)=>!['completed','closed','done','cancelled'].includes(String(x.status||'').toLowerCase()));
