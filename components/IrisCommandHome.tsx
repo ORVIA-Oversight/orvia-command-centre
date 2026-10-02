@@ -279,7 +279,6 @@ export function IrisCommandHome() {
         <button onClick={() => askIris('Review current health and social care priorities and tell me the top three risks.')}>Top risks</button>
         <button onClick={() => askIris('Prepare a concise management handover from current work and evidence.')}>Prepare handover</button>
         <button onClick={() => askIris('Research this using ORVIA Reach and return the strongest sourced findings, clearly separating verified facts from indications.')}>Research with ORVIA Reach</button>
-        <button onClick={() => askIris('Research this properly using ORVIA Reach, preserve the sources, and separate verified facts from indications.')}>Research with Reach</button>
       </section>
 
       <section className="irisSection">
