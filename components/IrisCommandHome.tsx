@@ -59,7 +59,6 @@ export function IrisCommandHome() {
   const [listening, setListening] = useState(false);
   const [voiceReplies, setVoiceReplies] = useState(true);
   const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [executive, setExecutive] = useState<ExecutiveBrief | null>(null);
   const [targetAgent, setTargetAgent] = useState<string>('IRIS');
 
@@ -98,14 +97,10 @@ export function IrisCommandHome() {
     if (voice) utterance.voice = voice;
     utterance.rate = 0.98;
     utterance.pitch = 1;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
   }
 
   function stopSpeaking() {
-    setIsSpeaking(false);
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
   }
 
@@ -210,21 +205,17 @@ export function IrisCommandHome() {
 
       <section className="irisHeroPanel">
         <div className="irisPresence">
-          <div className={`irisAvatar ${sending ? 'isThinking' : ''} ${listening ? 'isListening' : ''} ${isSpeaking ? 'isSpeaking' : ''}`}>
-            <div className="irisAvatarFace ariaAvatarFace" aria-label="ARIA, the visible voice presence for IRIS">
-              {process.env.NEXT_PUBLIC_ARIA_AVATAR_URL ? (
-                <img src={process.env.NEXT_PUBLIC_ARIA_AVATAR_URL} alt="ARIA — ORVIA voice avatar" />
-              ) : (
-                <div className="ariaAvatarFallback" aria-hidden="true"><span>ARIA</span><Sparkles size={22}/></div>
-              )}
+          <div className={`irisAvatar ${sending ? 'isThinking' : ''} ${listening ? 'isListening' : ''}`}>
+            <div className="irisAvatarFace" aria-label="IRIS AI assistant">
+              <Sparkles size={30}/>
             </div>
             <span className="irisPulse p1"/>
             <span className="irisPulse p2"/>
             <span className="irisPulse p3"/>
           </div>
           <div className="irisIdentity">
-            <div className="irisNameRow"><h2>IRIS</h2><span>Deputy · AI Operations</span><span className="ariaBadge">ARIA · Voice &amp; Avatar</span></div>
-            <p>You are Managing Director. IRIS is your deputy and conductor. ARIA is the visible voice presence you speak with here: she listens, speaks the reply back to you, and IRIS keeps the work, teams and evidence coordinated underneath.</p>
+            <div className="irisNameRow"><h2>IRIS</h2><span>Deputy · AI Operations</span></div>
+            <p>You are Managing Director. IRIS is your deputy: she can allocate the work automatically, or you can speak directly to a department or worker and IRIS keeps the overall picture coordinated.</p>
             <div className="irisTrustLine"><ShieldCheck size={15}/><span>Human authority retained for safeguarding, clinical and consequential decisions.</span></div>
           </div>
         </div>
@@ -232,7 +223,7 @@ export function IrisCommandHome() {
         <div className="irisConversation">
           {reply ? (
             <div className="irisReply">
-              <div className="irisReplyHead"><Bot size={17}/><b>IRIS via ARIA</b><small>{isSpeaking ? 'Speaking now' : 'Just now'}</small></div>
+              <div className="irisReplyHead"><Bot size={17}/><b>IRIS</b><small>Just now</small></div>
               <p>{reply}</p>
             </div>
           ) : (
@@ -287,6 +278,7 @@ export function IrisCommandHome() {
         <button onClick={() => askIris('Show me anything overdue, blocked or waiting for approval.')}>What is stuck?</button>
         <button onClick={() => askIris('Review current health and social care priorities and tell me the top three risks.')}>Top risks</button>
         <button onClick={() => askIris('Prepare a concise management handover from current work and evidence.')}>Prepare handover</button>
+        <button onClick={() => askIris('Research this using ORVIA Reach and return the strongest sourced findings, clearly separating verified facts from indications.')}>Research with ORVIA Reach</button>
       </section>
 
       <section className="irisSection">
