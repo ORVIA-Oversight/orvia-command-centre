@@ -32,3 +32,15 @@
 .next{background:#fff9e9;border:1px solid #f1dfad;color:#624b16;padding:14px 16px;border-radius:14px}.next strong{display:block;color:#0B2450;margin-bottom:4px}
 @media(max-width:1100px){.grid4{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
 @media(max-width:680px){.grid4{grid-template-columns:1fr}.heroTop{display:block}.statusPill{display:inline-block;margin-top:14px}.hero h2{font-size:33px}.inputRow{display:block}.inputRow button{width:100%;min-height:46px;margin-top:10px}.evidenceRow{grid-template-columns:65px 1fr}}
+
+
+.findingGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.findingCard{border:1px solid #dfe7ea;border-radius:18px;padding:16px;background:linear-gradient(180deg,#fff,#fbfcfc)}
+.findingTitle{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding-bottom:12px;border-bottom:1px solid #edf1f3}
+.findingTitle small{font-size:9px;letter-spacing:.12em;color:#2B929D;font-weight:900}
+.findingTitle h3{font-size:17px;margin:4px 0 0;line-height:1.25}
+.findingTitle span{max-width:180px;text-align:right;font-size:9px;line-height:1.35;font-weight:900;color:#7d641b;background:#fff8df;border:1px solid #f1dfad;border-radius:999px;padding:7px 9px}
+.principle{padding:11px 0;border-bottom:1px solid #edf1f3}.principle:last-child{border-bottom:0;padding-bottom:0}
+.principle b{display:block;color:#2B929D;font-size:11px;letter-spacing:.02em}
+.principle p{margin:5px 0 0;color:#627286;font-size:11px;line-height:1.55}
+@media(max-width:1100px){.findingGrid{grid-template-columns:1fr}}
