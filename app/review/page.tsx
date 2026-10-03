@@ -6,8 +6,9 @@ import styles from './review.module.css';
 
 export const dynamic='force-dynamic';
 
-export default async function ReviewPage(){
-  const [context,data]=await Promise.all([getPlatformContext(),loadReviewMatter()]);
+export default async function ReviewPage({searchParams}:{searchParams?:{matter?:string}}){
+  const matterRef=(searchParams?.matter||'ORV-REV-DEMO-001').trim();
+  const [context,data]=await Promise.all([getPlatformContext(),loadReviewMatter(matterRef)]);
   const matter=data?.matter;
   if(!matter){
     return <UnifiedShell context={context} title="ORVIA Review Engine"><div className={styles.page}><section className={styles.hero}><div><div className={styles.eyebrow}>ORVIA REVIEW ENGINE</div><h2>Review workspace unavailable.</h2><p>The backend is not currently returning the synthetic practice matter.</p></div></section></div></UnifiedShell>;
@@ -19,6 +20,7 @@ export default async function ReviewPage(){
   const runs=data?.runs??[];
   const totalPages=evidence.reduce((n:number,e:any)=>n+(Number(e.page_count)||0),0);
   const contradictions=issues.reduce((n:number,i:any)=>n+((i.conflicting_evidence?.length)||0),0);
+  const findings=Array.isArray(data?.report?.findings)?data.report.findings:[];
 
   return <UnifiedShell context={context} title="ORVIA Review Engine">
     <div className={styles.page}>
@@ -69,6 +71,23 @@ export default async function ReviewPage(){
           </div>
         </article>
       </section>
+
+
+      {findings.length>0 && <section className={styles.card}>
+        <div className={styles.cardHead}><div><small>ORVIA FOUNDING PRINCIPLES</small><h3>Findings through Observation · Reflection · Visibility · Insight · Accountability</h3></div><span>{findings.length} findings</span></div>
+        <div className={styles.cardBody}>
+          <div className={styles.findingGrid}>
+            {findings.map((f:any)=><article className={styles.findingCard} key={f.ref||f.title}>
+              <div className={styles.findingTitle}><div><small>{f.ref||'FINDING'}</small><h3>{f.title}</h3></div><span>{f.visibility||'OPEN'}</span></div>
+              <div className={styles.principle}><b>Observation</b><p>{f.observation||'—'}</p></div>
+              <div className={styles.principle}><b>Reflection</b><p>{f.reflection||'—'}</p></div>
+              <div className={styles.principle}><b>Visibility</b><p>{f.visibility||'—'}</p></div>
+              <div className={styles.principle}><b>Insight</b><p>{f.insight||'—'}</p></div>
+              <div className={styles.principle}><b>Accountability</b><p>{f.accountability||'—'}</p></div>
+            </article>)}
+          </div>
+        </div>
+      </section>}
 
       <section className={styles.two}>
         <article className={styles.card}>
