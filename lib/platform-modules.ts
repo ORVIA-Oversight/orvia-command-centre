@@ -20,6 +20,7 @@ export const PLATFORM_MODULES:PlatformModule[]=[
   {id:'systems',label:'Systems & Access',description:'Connections, access and service health.',href:'/systems',audiences:['internal'],internalOnly:true,accent:'teal'},
   {id:'brand',label:'Brand Control',description:'Approved brand, media, website and document controls.',href:'https://brand-control.orvia.org.uk',audiences:['internal'],internalOnly:true,accent:'purple'},
   {id:'reports',label:'Reports & KPI',description:'Verified outputs, KPI packs and downloadable reports.',href:'/portal/reports',audiences:['internal','customer'],accent:'gold'},
+  {id:'review',label:'Review Engine',description:'Matters, evidence, chronology, issues, contradictions, gaps and source-linked reports.',href:'/review',audiences:['internal','customer'],serviceCodes:['review','threshold','legal-review','evidence-review'],accent:'orange'},
   {id:'voice',label:'Voice',description:'Calls, receptionist activity, summaries and outcomes.',href:'/portal/service/voice',audiences:['customer'],serviceCodes:['voice','aria'],accent:'teal'},
   {id:'web',label:'Web',description:'Website activity, changes, SEO and support.',href:'/portal/service/web',audiences:['customer'],serviceCodes:['web'],accent:'purple'},
   {id:'oversight',label:'Oversight',description:'Assurance activity, actions, evidence and verification.',href:'/portal/service/oversight',audiences:['customer'],serviceCodes:['oversight','complete','connect'],accent:'navy'},
