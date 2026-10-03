@@ -2,6 +2,7 @@ import { UnifiedShell } from '@/components/UnifiedShell';
 import { getPlatformContext } from '@/lib/platform-context';
 import { loadReviewMatter } from '@/lib/review-engine';
 import { ReviewPracticeComposer } from '@/components/ReviewPracticeComposer';
+import { REVIEW_INVESTIGATION_TOOLS, REVIEW_PIPELINE } from '@/lib/review-investigation-tools';
 import styles from './review.module.css';
 
 export const dynamic='force-dynamic';
@@ -72,6 +73,30 @@ export default async function ReviewPage({searchParams}:{searchParams?:{matter?:
         </article>
       </section>
 
+
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}><div><small>INVESTIGATION TOOLBOX</small><h3>What each evidence tool does, when it runs and where its findings go</h3></div><span>{REVIEW_INVESTIGATION_TOOLS.length} tools</span></div>
+        <div className={styles.cardBody}>
+          <div className={styles.toolGrid}>
+            {REVIEW_INVESTIGATION_TOOLS.map(tool=><article className={styles.toolCard} key={tool.id}>
+              <div className={styles.toolTitle}>
+                <div><small>{tool.stage.toUpperCase()} · {tool.status.toUpperCase()}</small><h3>{tool.name}</h3></div>
+                <span>{tool.licence}</span>
+              </div>
+              <p className={styles.toolPurpose}>{tool.purpose}</p>
+              <div className={styles.toolMeta}><b>Use when</b><p>{tool.activation}</p></div>
+              <div className={styles.toolMeta}><b>Inputs</b><p>{tool.inputs.join(' · ')}</p></div>
+              <div className={styles.toolMeta}><b>Produces</b><p>{tool.outputs.join(' · ')}</p></div>
+              <div className={styles.toolMeta}><b>Reports into</b><p>{tool.routesTo.join(' → ')}</p></div>
+            </article>)}
+          </div>
+          <div className={styles.pipeline}>
+            <b>ORVIA review path</b>
+            <div>{REVIEW_PIPELINE.map((step,index)=><span key={step}>{step}{index<REVIEW_PIPELINE.length-1?<em>→</em>:null}</span>)}</div>
+          </div>
+        </div>
+      </section>
 
       {findings.length>0 && <section className={styles.card}>
         <div className={styles.cardHead}><div><small>ORVIA FOUNDING PRINCIPLES</small><h3>Findings through Observation · Reflection · Visibility · Insight · Accountability</h3></div><span>{findings.length} findings</span></div>
