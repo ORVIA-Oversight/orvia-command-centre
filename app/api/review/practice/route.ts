@@ -15,7 +15,8 @@ export async function POST(req:NextRequest){
   if(!supabase) return NextResponse.json({reason:'The Review Engine database is unavailable.'},{status:503});
 
   const matter=await supabase.from('review_matters').select('id,matter_ref').eq('matter_ref','ORV-REV-DEMO-001').maybeSingle();
-  if(!matter.data) return NextResponse.json({reason:'The synthetic practice matter is unavailable.'},{status:404});
+  const matterRow=matter.data;
+  if(!matterRow) return NextResponse.json({reason:'The synthetic practice matter is unavailable.'},{status:404});
 
   const workers=[
     ['Evidence Worker','Index and classify the available material'],
@@ -27,7 +28,7 @@ export async function POST(req:NextRequest){
   ];
 
   const rows=workers.map(([worker,task],i)=>({
-    matter_id:matter.data.id,
+    matter_id:matterRow.id,
     worker,
     task,
     status:i<2?'completed':i<5?'queued':'queued',
@@ -43,9 +44,9 @@ export async function POST(req:NextRequest){
   await supabase.from('review_ai_runs').insert(rows);
 
   const counts=await Promise.all([
-    supabase.from('review_evidence').select('id',{count:'exact',head:true}).eq('matter_id',matter.data.id),
-    supabase.from('review_issues').select('id',{count:'exact',head:true}).eq('matter_id',matter.data.id),
-    supabase.from('review_gaps').select('id',{count:'exact',head:true}).eq('matter_id',matter.data.id).eq('status','open')
+    supabase.from('review_evidence').select('id',{count:'exact',head:true}).eq('matter_id',matterRow.id),
+    supabase.from('review_issues').select('id',{count:'exact',head:true}).eq('matter_id',matterRow.id),
+    supabase.from('review_gaps').select('id',{count:'exact',head:true}).eq('matter_id',matterRow.id).eq('status','open')
   ]);
 
   const evidence=counts[0].count??0;
@@ -54,7 +55,7 @@ export async function POST(req:NextRequest){
 
   return NextResponse.json({
     status:'COMPLETE',
-    matterRef:matter.data.matter_ref,
+    matterRef:matterRow.matter_ref,
     answer:`Practice run created. IRIS has routed the instruction across six bounded workers. The current synthetic matter contains ${evidence} evidence items, ${issues} live issues and ${gaps} open evidence gap${gaps===1?'':'s'}. The production fast path will return the useful answer first, then continue deeper verification in parallel instead of making you wait for every worker to finish.`
   });
 }
