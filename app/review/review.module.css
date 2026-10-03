@@ -44,3 +44,15 @@
 .principle b{display:block;color:#2B929D;font-size:11px;letter-spacing:.02em}
 .principle p{margin:5px 0 0;color:#627286;font-size:11px;line-height:1.55}
 @media(max-width:1100px){.findingGrid{grid-template-columns:1fr}}
+
+
+.toolGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.toolCard{border:1px solid #dfe7ea;border-radius:18px;padding:16px;background:linear-gradient(180deg,#fff,#fbfcfc)}
+.toolTitle{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding-bottom:11px;border-bottom:1px solid #edf1f3}
+.toolTitle small{font-size:9px;letter-spacing:.11em;font-weight:900;color:#2B929D}
+.toolTitle h3{font-size:16px;margin:4px 0 0}
+.toolTitle span{font-size:9px;font-weight:900;color:#82418F;background:#f5eef7;border-radius:999px;padding:6px 8px}
+.toolPurpose{font-size:12px;line-height:1.55;color:#53657b}
+.toolMeta{padding-top:9px;border-top:1px solid #edf1f3;margin-top:9px}.toolMeta b{font-size:10px;color:#0B2450}.toolMeta p{font-size:10px;line-height:1.5;color:#6b7b8e;margin:4px 0 0}
+.pipeline{margin-top:18px;padding:16px;border-radius:16px;background:#f8fbfc;border:1px solid #dfe7ea}.pipeline>b{font-size:11px;color:#0B2450}.pipeline>div{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pipeline span{font-size:9px;font-weight:900;letter-spacing:.03em;color:#27737b;background:#eef6f7;border-radius:999px;padding:7px 9px}.pipeline em{font-style:normal;margin-left:8px;color:#EAAA00}
+@media(max-width:1100px){.toolGrid{grid-template-columns:1fr}}
